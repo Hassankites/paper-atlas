@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from paper_atlas.doctor import _zotero_data_dir  # noqa: E402
 
 AUTHOR = "Paper Atlas"
-COLOR = "#ffd400"
+YELLOW = (1.0, 0.831, 0.0)
 QUOTES = ["quick brown fox", "lazy dog"]
 COMMENTS = ["Probe: claim marker", "Probe: choice marker"]
 
@@ -62,12 +62,11 @@ def write_probe(pdf_path: Path, out_path: Path, prefix: str = "pa-probe") -> lis
     for index, (quote, comment) in enumerate(targets, start=1):
         rects = page.search_for(quote)
         annot = page.add_highlight_annot(rects[0])
-        annot.set_colors(stroke=(1.0, 0.831, 0.0))
+        annot.set_colors(stroke=YELLOW)
         annot.set_info(content=comment, title=AUTHOR)
         annot.update()
         key = f"{prefix}-{index}"
         doc.xref_set_key(annot.xref, "Zotero:AuthorName", _pdf_string(AUTHOR))
-        doc.xref_set_key(annot.xref, "Zotero:Color", _pdf_string(COLOR))
         doc.xref_set_key(annot.xref, "Zotero:Key", _pdf_string(key))
         keys.append(key)
     doc.save(str(out_path))

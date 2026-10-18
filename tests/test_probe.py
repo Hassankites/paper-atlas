@@ -68,5 +68,7 @@ def test_probe_sets_zotero_keys_and_a_distinct_comment(probe_pdf, tmp_path):
         assert annot.info["content"].strip()
         assert annot.info["content"].strip() != covered
         assert out.xref_get_key(annot.xref, "Zotero:AuthorName") == ("string", "Paper Atlas")
-        assert out.xref_get_key(annot.xref, "Zotero:Color") == ("string", "#ffd400")
         assert out.xref_get_key(annot.xref, "Zotero:Key") == ("string", key)
+        # Zotero parses /Zotero:Color as a number array; a hex string there
+        # silently makes the highlight black. Only /C is written.
+        assert out.xref_get_key(annot.xref, "Zotero:Color")[0] == "null"
