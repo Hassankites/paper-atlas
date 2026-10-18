@@ -1,3 +1,5 @@
+import re
+
 import pymupdf
 import pytest
 
@@ -45,7 +47,7 @@ def valid_map():
                 "label": "Figure 1",
                 "page": 1,
                 "caption_quote": FIGURE_CAPTION,
-                "supports": "d1",
+                "supports": "hierarchical grid gives local updates",
                 "caveat": "Replica only",
             }
         ],
@@ -61,6 +63,50 @@ def test_comment_never_equals_quote(valid_map, doc):
     for item in planned:
         assert anchors.normalize(item.comment) != anchors.normalize(item.quote)
         assert len(item.comment) <= 200
+
+
+def test_comments_do_not_leak_internal_ids(valid_map, doc):
+    for item in annotate.plan(valid_map, doc):
+        assert not re.search(r"\b[cdl]\d\b", item.comment), item.comment
+
+
+def test_chain_comment_names_the_step_instead_of_an_id(valid_map, doc):
+    chain_comment = next(
+        item.comment for item in annotate.plan(valid_map, doc) if item.role == "chain"
+    )
+    assert "problem" in chain_comment
+
+
+def test_multiline_quote_gets_one_quad_per_line(tmp_path):
+    pdf = tmp_path / "multi.pdf"
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 100), "Dense visual SLAM is a fundamental problem", fontsize=10)
+    page.insert_text((72, 114), "in computer vision with many applications", fontsize=10)
+    page.insert_text((72, 128), "in autonomous driving and robotics.", fontsize=10)
+    doc.save(pdf)
+    doc.close()
+
+    map_dict = {
+        "paper": {"zotero_key": "MULTI"},
+        "claim": {
+            "text": "SLAM matters",
+            "quote": "Dense visual SLAM is a fundamental problem in computer vision "
+            "with many applications in autonomous driving and robotics",
+            "page": 0,
+        },
+    }
+    annotate.apply(
+        pdf,
+        annotate.plan(map_dict, pymupdf.open(pdf)),
+        pymupdf.open(pdf),
+    )
+
+    out = pymupdf.open(pdf)
+    page = out[0]
+    annot = [a for a in page.annots() if a.type[1] == "Highlight"][0]
+    # Three lines => three quads => twelve corner points, not one big box.
+    assert len(annot.vertices) == 12
 
 
 def test_plan_uses_stable_ids(valid_map, doc):

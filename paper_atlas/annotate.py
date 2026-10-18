@@ -84,12 +84,15 @@ def _clip(text: str, limit: int = 200) -> str:
     return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
-def _comment(role: str, entry: dict, labels: dict) -> str:
+def _comment(role: str, entry: dict, labels: dict, lang: str) -> str:
     separator = labels["sep"]
     if role == "claim":
         body = entry.get("text", "")
+        head = labels["claim"]
     elif role == "chain":
-        body = f"{entry.get('id', '')} {entry.get('text', '')}".strip()
+        body = entry.get("text", "")
+        step = (entry.get("step") or "").strip()
+        head = f"{labels['chain']}: {step}" if step else labels["chain"]
     elif role == "choice":
         body = separator.join(
             [
@@ -98,6 +101,7 @@ def _comment(role: str, entry: dict, labels: dict) -> str:
                 f"{labels['cost']}: {entry.get('cost', '—')}",
             ]
         )
+        head = labels["choice"]
     elif role == "figure":
         body = separator.join(
             [
@@ -105,9 +109,17 @@ def _comment(role: str, entry: dict, labels: dict) -> str:
                 f"{labels['caveat']}: {entry.get('caveat', '—')}",
             ]
         )
+        head = _figure_label(entry.get("label", ""), lang)
     else:
         body = entry.get("text", "")
-    return _clip(f"[{labels[role]}] {body}")
+        head = labels["limit"]
+    return _clip(f"[{head}] {body}")
+
+
+def _figure_label(label: str, lang: str) -> str:
+    if lang != "zh":
+        return label or "Figure"
+    return label.replace("Figure", "图").replace("Table", "表")
 
 
 def plan(map_dict: dict, doc, lang: str = "zh") -> list[Planned]:
@@ -121,7 +133,7 @@ def plan(map_dict: dict, doc, lang: str = "zh") -> list[Planned]:
                 id=f"{KEY_PREFIX}{paper_key}-{entry_id}",
                 role=role,
                 color=COLORS[role],
-                comment=_comment(role, entry, labels),
+                comment=_comment(role, entry, labels, lang),
                 page=int(entry.get("page", 0)),
                 quote=quote,
             )
@@ -189,7 +201,8 @@ def apply(
             continue
         page_index, rects = found
         page = doc[page_index]  # keep the reference: a temporary page unbinds the annot
-        annot = page.add_highlight_annot(rects[0])
+        # One quad per line: a single bounding rect paints the whole block.
+        annot = page.add_highlight_annot(quads=rects)
         annot.set_colors(stroke=hex_to_rgb(item.color))
         annot.set_info(content=item.comment, title=AUTHOR)
         annot.update()

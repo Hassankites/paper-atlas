@@ -42,11 +42,39 @@ def _word_key(word: str) -> str:
     return word.strip(_EDGE_PUNCT)
 
 
+def _group_by_line(rects: list[pymupdf.Rect]) -> list[pymupdf.Rect]:
+    """Merge word rectangles into one rectangle per visual line.
+
+    Words on the same baseline but in different columns stay apart: a union
+    across the gutter produces the giant block users rightly complain about.
+    """
+    lines: list[pymupdf.Rect] = []
+    for rect in rects:
+        for index, line in enumerate(lines):
+            same_baseline = abs(rect.y0 - line.y0) < 4
+            near = rect.x0 - line.x1 < 60 and line.x0 - rect.x1 < 60
+            if same_baseline and near:
+                lines[index] = line | rect
+                break
+        else:
+            lines.append(pymupdf.Rect(rect))
+    return lines
+
+
+def _plausible(rects: list[pymupdf.Rect]) -> bool:
+    """Reject matches whose 'lines' jump far down the page: a false pairing."""
+    ordered = sorted(rects, key=lambda rect: (round(rect.y0), rect.x0))
+    for previous, current in zip(ordered, ordered[1:]):
+        if current.y0 - previous.y1 > 30:
+            return False
+    return True
+
+
 def find_rects(page, quote: str) -> list[pymupdf.Rect]:
-    """Return rectangles covering `quote`, or an empty list."""
+    """Return rectangles covering `quote`, one per line, or an empty list."""
     direct = page.search_for(quote)
-    if direct:
-        return direct
+    if direct and _plausible(direct):
+        return _group_by_line(direct)
 
     target = [_word_key(word) for word in normalize(quote).split()]
     target = [word for word in target if word]
@@ -55,14 +83,22 @@ def find_rects(page, quote: str) -> list[pymupdf.Rect]:
 
     words = _words(page)
     width = len(target)
+    best: list[pymupdf.Rect] | None = None
+    best_area: float | None = None
     for start in range(len(words) - width + 1):
         window = [_word_key(normalize(word)) for _, word in words[start : start + width]]
-        if window == target:
-            rect = words[start][0]
-            for extra_rect, _ in words[start + 1 : start + width]:
-                rect = rect | extra_rect
-            return [rect]
-    return []
+        if window != target:
+            continue
+        rects = [rect for rect, _ in words[start : start + width]]
+        union = rects[0]
+        for rect in rects[1:]:
+            union = union | rect
+        area = union.width * union.height
+        if best_area is None or area < best_area:
+            best_area, best = area, rects
+    if best is None:
+        return []
+    return _group_by_line(best)
 
 
 def locate(
