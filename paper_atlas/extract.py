@@ -45,6 +45,14 @@ def _body_size(pages: list[dict]) -> float:
     return float(max(weight, key=weight.get))
 
 
+def is_textless(structure: dict, min_chars: int = 200) -> bool:
+    """True for a scanned PDF: no text layer to anchor anything to."""
+    total = sum(
+        len(block["text"]) for page in structure["pages"] for block in page["blocks"]
+    )
+    return total < min_chars
+
+
 def extract_structure(pdf_path: Path) -> dict:
     doc = pymupdf.open(str(pdf_path))
     pages = []

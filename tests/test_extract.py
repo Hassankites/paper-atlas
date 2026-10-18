@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pymupdf
 import pytest
 
 from paper_atlas import extract
@@ -42,6 +43,35 @@ def test_figure_without_image_degrades_to_caption_only(paper_pdf, tmp_path):
     crops = extract.render_figures(structure, paper_pdf, tmp_path / "figs")
     table = next(item for item in crops if item["label"] == "Table 2")
     assert table["crop"] is None
+
+
+def test_extract_cli_refuses_a_textless_pdf(tmp_path):
+    from scripts.extract import main
+
+    pdf = tmp_path / "scan.pdf"
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.draw_rect(pymupdf.Rect(72, 72, 400, 400), color=(0, 0, 0))
+    doc.save(pdf)
+    doc.close()
+
+    assert main([str(pdf), "--out", str(tmp_path / "out")]) == 2
+
+
+def test_textless_pdf_is_detected(tmp_path):
+    pdf = tmp_path / "scan.pdf"
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.draw_rect(pymupdf.Rect(72, 72, 400, 400), color=(0, 0, 0))
+    doc.save(pdf)
+    doc.close()
+
+    structure = extract.extract_structure(pdf)
+    assert extract.is_textless(structure) is True
+
+
+def test_a_normal_pdf_is_not_textless(paper_pdf):
+    assert extract.is_textless(extract.extract_structure(paper_pdf)) is False
 
 
 def test_detects_chinese_caption_labels(tmp_path):

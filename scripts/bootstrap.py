@@ -19,7 +19,7 @@ def _run(cmd: list) -> int:
 
 
 def _importable(interpreter: Path) -> bool:
-    return interpreter.exists() and _run([interpreter, "-c", "import fitz, pytest"]) == 0
+    return interpreter.exists() and _run([interpreter, "-c", "import pymupdf, pytest"]) == 0
 
 
 def main() -> int:

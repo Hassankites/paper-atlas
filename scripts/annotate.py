@@ -35,19 +35,39 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     planned = annotate.plan(map_dict, doc, lang=args.lang)
+    pdf_path = Path(args.pdf)
+    backup = pdf_path.with_name(pdf_path.stem + annotate.BACKUP_SUFFIX)
+
     if not args.apply:
+        print(f"file    : {pdf_path}")
+        print(f"backup  : {backup}")
+        print(
+            "colors  : "
+            + ", ".join(f"{role} {color}" for role, color in annotate.COLORS.items())
+        )
         for item in planned:
             found = anchors.locate(doc, item.page, item.quote)
-            where = f"p.{found[0] + 1}" if found else "NOT FOUND"
-            print(f"{item.role:7s} {where:8s} {item.id}  {item.comment[:60]}")
+            if found:
+                page_index, rects = found
+                width = round(sum(rect.width for rect in rects))
+                where = f"p.{page_index + 1} ({width}pt wide, {len(rects)} line(s))"
+            else:
+                where = "NOT FOUND"
+            print(f"{item.role:7s} {where:34s} {item.id}")
         print(f"dry run: {len(planned)} annotations, nothing written")
         return 0
 
-    result = annotate.apply(args.pdf, planned, doc, force=args.force)
+    result = annotate.apply(pdf_path, planned, doc, force=args.force)
+    print(f"file    : {pdf_path}")
+    print(f"backup  : {backup}")
     print(f"added   : {result['added']}")
     print(f"skipped : {result['skipped']}")
-    for missing in result["missing"]:
-        print(f"missing : {missing}")
+    if result["missing"]:
+        for missing in result["missing"]:
+            print(f"missing : {missing}")
+        print("some quotes could not be located; they were not written")
+        return 1
+
     print()
     print("Next: open the PDF in Zotero, then File -> Import Annotations")
     print("to turn these read-only highlights into editable Zotero annotations.")

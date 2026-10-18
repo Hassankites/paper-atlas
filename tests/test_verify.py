@@ -102,6 +102,20 @@ def test_basis_quote_may_live_far_from_the_choice(tmp_path):
     assert verify.verify(map_dict, doc).errors == []
 
 
+def test_comment_repeating_the_quote_is_an_error(valid_map, doc):
+    # The fallback comment would be "[主张] " + the quote itself; Zotero erases
+    # comments within ~10% edit distance of the highlighted text.
+    valid_map["claim"]["text"] = BODY
+    report = verify.verify(valid_map, doc)
+    assert any("repeats the highlighted text" in error for error in report.errors)
+
+
+def test_choice_without_an_alternative_is_an_error(valid_map, doc):
+    valid_map["choices"][0]["alternative"] = ""
+    report = verify.verify(valid_map, doc)
+    assert any("alternative" in error for error in report.errors)
+
+
 def test_density_cap_is_enforced(valid_map, doc):
     valid_map["chain"] = valid_map["chain"] * 30
     report = verify.verify(valid_map, doc)

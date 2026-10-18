@@ -134,6 +134,26 @@ def test_render_english_pain_and_novelty_headings(map_dict):
     assert "Borrowed" in text
 
 
+def test_render_shows_the_basis_of_an_inference(map_dict):
+    text = render.render(map_dict, lang="zh")
+    assert "推断依据" in text
+    assert "one feature grid" in text  # the basis_quote itself
+
+
+def test_render_gives_limits_their_own_heading(map_dict):
+    text = render.render(map_dict, lang="zh")
+    assert "## 存疑" in text
+
+
+def test_render_skips_the_empty_quote_of_an_inferred_strength(map_dict):
+    map_dict["strength"] = [
+        {"text": "作者复现了基线", "inferred": True, "basis_quote": "our iMAP re-implementation", "page": 5}
+    ]
+    text = render.render(map_dict, lang="zh")
+    assert "“”" not in text
+    assert "our iMAP re-implementation" in text
+
+
 def test_write_creates_the_markdown_file(map_dict, tmp_path):
     path = render.write(map_dict, tmp_path / "out", lang="zh")
     assert path.name == "map.md"

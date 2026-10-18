@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from paper_atlas import anchors
+from paper_atlas import anchors, annotate, textsim
 
 CAPS = {"normal": 20, "detailed": 30}
 
@@ -31,8 +31,17 @@ def _quote_error(
     if not quote or not quote.strip():
         report.errors.append(f"{label}: missing quote")
         return
-    if anchors.locate(doc, page, quote, tolerance_pages=tolerance) is None:
+    found = anchors.locate(doc, page, quote, tolerance_pages=tolerance)
+    if found is None:
         report.errors.append(f"{label}: quote not found: {quote[:60]!r}")
+        return
+    page_index, _ = found
+    occurrences = anchors.count_occurrences(doc[page_index], quote)
+    if occurrences > 1:
+        report.errors.append(
+            f"{label}: quote occurs {occurrences} times on p.{page_index + 1}; "
+            "lengthen it until it is unique"
+        )
 
 
 def _inference_error(doc, label: str, entry: dict, page: int, report: Report) -> None:
@@ -65,6 +74,11 @@ def verify(map_dict: dict, doc, density: str = "normal") -> Report:
         report.highlight_count += 1
         page = item.get("page", 0)
         _quote_error(doc, f"choices[{index}].quote", item.get("quote", ""), page, report)
+        if not (item.get("alternative") or "").strip():
+            report.errors.append(
+                f"choices[{index}]: missing alternative — a choice without a "
+                "could-have-been is just a description"
+            )
         for name in ("alternative", "cost"):
             if item.get(f"{name}_inferred"):
                 _inference_error(doc, f"choices[{index}].{name}", item, page, report)
@@ -96,5 +110,14 @@ def verify(map_dict: dict, doc, density: str = "normal") -> Report:
         report.errors.append(
             f"highlight count {report.highlight_count} exceeds the {density} cap of {cap}"
         )
+
+    # Zotero deletes a comment that is essentially the text it annotates, so a
+    # template echoing the quote would come back empty in the reader.
+    for item in annotate.plan(map_dict, None):
+        if textsim.too_similar(item.comment, item.quote):
+            report.errors.append(
+                f"{item.role} {item.id}: comment repeats the highlighted text; "
+                "Zotero will clear it — say what it means instead"
+            )
 
     return report

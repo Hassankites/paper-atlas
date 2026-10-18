@@ -104,6 +104,16 @@ Two of them carry the weight, because a good summary already does the rest:
 The decision table's **"could have been"** column is the other thing a summary never has —
 without it a decision is just a description.
 
+## Quality bar
+
+- A good `alternative` is a road the authors visibly considered and rejected, not any
+  random other method. If you cannot name what they gave up, you have not found a choice.
+- A good `caveat` is the thing this table could have shown and did not: one dataset, a
+  self-reimplemented baseline, a smoothed curve, a single seed.
+- Every link in the causal chain needs a failure mode, not just "prior work did X".
+- A pain has to name who hurts, what they see, and what it costs them. "Not scalable" is a
+  property; "a flat means starting the scan over" is a pain.
+
 ## Failure handling
 
 | Situation | Do this |

@@ -26,9 +26,22 @@ class PaperHit:
 
 
 class LibraryConnection(sqlite3.Connection):
-    """A connection that remembers which library it came from."""
+    """A connection that remembers the library and cleans up its snapshot."""
 
     data_dir: Path
+    snapshot_dir: Path
+
+    def close(self) -> None:
+        try:
+            super().close()
+        finally:
+            shutil.rmtree(self.snapshot_dir, ignore_errors=True)
+
+    def __enter__(self) -> "LibraryConnection":
+        return self
+
+    def __exit__(self, *_exc) -> None:
+        self.close()
 
 
 def default_data_dir() -> Path:
@@ -62,6 +75,7 @@ def connect_ro(data_dir: Path) -> LibraryConnection:
     conn = sqlite3.connect(uri, uri=True, factory=LibraryConnection)
     conn.row_factory = sqlite3.Row
     conn.data_dir = Path(data_dir)
+    conn.snapshot_dir = snapshot
     return conn
 
 

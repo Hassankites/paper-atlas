@@ -33,7 +33,7 @@
       "step": "第三条路也不行",
       "text": "ConvONet 一类多级网格特征能保细节、能重建复杂场景，但那套是离线方法，做不到实时。",
       "quote": "but these are offline methods without real-time capability",
-      "page": 0,
+      "page": 1,
       "note": "多级网格能补细节，可它们大多离线，实时拿不到。"
     },
     {

@@ -9,7 +9,6 @@ with --check-db.
 from __future__ import annotations
 
 import argparse
-import sqlite3
 import sys
 from pathlib import Path
 
@@ -17,7 +16,7 @@ import pymupdf
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from paper_atlas.doctor import _zotero_data_dir  # noqa: E402
+from paper_atlas import zotero  # noqa: E402
 
 AUTHOR = "Paper Atlas"
 YELLOW = (1.0, 0.831, 0.0)
@@ -75,11 +74,12 @@ def write_probe(pdf_path: Path, out_path: Path, prefix: str = "pa-probe") -> lis
 
 
 def check_db() -> int:
-    data_dir = _zotero_data_dir()
-    if data_dir is None:
+    try:
+        data_dir = zotero.default_data_dir()
+    except FileNotFoundError:
         print("no Zotero data directory found")
         return 1
-    conn = sqlite3.connect(f"file:{data_dir / 'zotero.sqlite'}?mode=ro", uri=True)
+    conn = zotero.connect_ro(data_dir)
     total = conn.execute("select count(*) from itemAnnotations").fetchone()[0]
     external = conn.execute(
         "select count(*) from itemAnnotations where isExternal=1"

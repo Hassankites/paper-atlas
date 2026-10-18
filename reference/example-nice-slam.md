@@ -26,7 +26,7 @@ p.1 · “we present NICE-SLAM, a dense SLAM system that incorporates multi-leve
 2. **另一条路的失效点** 传统 TSDF/体素 SLAM 实时、能上大场景，但没看过的地方给不出合理几何。  
    p.1 · “they are unable to make plausible geometry estimation for unobserved regions”
 3. **第三条路也不行** ConvONet 一类多级网格特征能保细节、能重建复杂场景，但那套是离线方法，做不到实时。  
-   p.1 · “but these are offline methods without real-time capability”
+   p.2 · “but these are offline methods without real-time capability”
 4. **真正的空档** 一旦从单间扩到多房间，重建和追踪会同时明显变差——这就是要填的坑。  
    p.1 · “significant performance drops are observed in both the dense reconstruction and camera tracking accuracy”
 5. **本文的选择** 把多级局部信息装进场景表示：网格存特征，解码器提供先验，二者分工。  
@@ -55,6 +55,14 @@ p.1 · “we present NICE-SLAM, a dense SLAM system that incorporates multi-leve
 | Table 5 | 每个选择各自贡献多少？ | 冻结解码器 / local BA / 颜色 三项的合并贡献 | 各跑 5 次取均值与标准差，ScanNet 6 个场景平均 | 只在 ScanNet 的 6 个场景上平均；消融之间可能互相耦合 | p.8 |
 | Figure 8 | 三层结构本身是不是必要的？ | 三层结构本身带来更快收敛 | 单张深度图上对比 只用高分辨率 / 只用低分辨率 / 本文 | 单帧几何优化，不是完整 SLAM；曲线还做了平滑 | p.8 |
 
+*推断依据*
+
+- 几何分粗/中/细三层，粗层故意做到极低分辨率（2m），专门负责没观测到的地方 —— “one feature grid with the same resolution as our fine-level representation”（p.3）
+- 解码器全部冻结，只优化网格里的特征 —— “only optimize the feature grids”（p.3）
+- 关键帧只选与当前帧有视觉重叠的，且只更新视锥范围内的网格 —— “where they select keyframes from the entire scene”（p.5）
+- 加一步 local bundle adjustment，把 K 个关键帧的位姿和所有层一起联合优化 —— “the camera tracking is not only significantly less accurate, but also less robust”（p.4）
+- 颜色不冻结，特征和解码器一起学，用来给追踪提供额外信号 —— “we compare our method without the photometric loss”（p.4）
+
 ## 证据强度
 
 - 作者对每个场景跑 5 次并报告均值与标准差，比多数 SLAM 论文规范。  
@@ -79,7 +87,7 @@ p.1 · “we present NICE-SLAM, a dense SLAM system that incorporates multi-leve
 | local bundle adjustment | 局部光束法平差 |
 | frustum | 视锥 |
 
----
+## 存疑
 
 > 颜色没有冻结，因此跟 iMAP 一样会遗忘，只有局部一致；整场颜色要靠后处理全局优化。  
 > p.4 · “this can lead to forgetting problems and the color is only consistent locally”

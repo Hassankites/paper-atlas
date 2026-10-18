@@ -214,6 +214,7 @@ def apply(
         annot.update()
         doc.xref_set_key(annot.xref, "Zotero:AuthorName", _pdf_string(AUTHOR))
         doc.xref_set_key(annot.xref, "Zotero:Key", _pdf_string(item.id))
+        doc.xref_set_key(annot.xref, "NM", _pdf_string(f"Zotero-{item.id}"))
         added += 1
 
     doc.saveIncr()

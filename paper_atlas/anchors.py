@@ -47,18 +47,53 @@ def _group_by_line(rects: list[pymupdf.Rect]) -> list[pymupdf.Rect]:
 
     Words on the same baseline but in different columns stay apart: a union
     across the gutter produces the giant block users rightly complain about.
+    12 pt covers the widest inter-word gap in justified text and still splits
+    the narrowest two-column gutter we have seen.
     """
     lines: list[pymupdf.Rect] = []
     for rect in rects:
         for index, line in enumerate(lines):
             same_baseline = abs(rect.y0 - line.y0) < 4
-            near = rect.x0 - line.x1 < 60 and line.x0 - rect.x1 < 60
+            near = rect.x0 - line.x1 < 12 and line.x0 - rect.x1 < 12
             if same_baseline and near:
                 lines[index] = line | rect
                 break
         else:
             lines.append(pymupdf.Rect(rect))
     return lines
+
+
+def _first_cluster(lines: list[pymupdf.Rect]) -> list[pymupdf.Rect]:
+    """Keep the first contiguous run of lines; drop repeats elsewhere on the page."""
+    if not lines:
+        return []
+    ordered = sorted(lines, key=lambda rect: (round(rect.y0), rect.x0))
+    cluster = [ordered[0]]
+    for rect in ordered[1:]:
+        if rect.y0 - cluster[-1].y1 <= 30:
+            cluster.append(rect)
+        else:
+            break
+    return cluster
+
+
+def _canon(text: str) -> str:
+    return " ".join(
+        word for word in (_word_key(part) for part in normalize(text).split()) if word
+    )
+
+
+def page_text(page) -> str:
+    """Reading-order text with hyphenated line breaks stitched."""
+    return " ".join(word for _, word in _words(page))
+
+
+def count_occurrences(page, quote: str) -> int:
+    """How many times a quote appears on a page, after normalisation."""
+    needle = _canon(quote)
+    if not needle:
+        return 0
+    return _canon(page_text(page)).count(needle)
 
 
 def _plausible(rects: list[pymupdf.Rect]) -> bool:
@@ -74,7 +109,7 @@ def find_rects(page, quote: str) -> list[pymupdf.Rect]:
     """Return rectangles covering `quote`, one per line, or an empty list."""
     direct = page.search_for(quote)
     if direct and _plausible(direct):
-        return _group_by_line(direct)
+        return _first_cluster(_group_by_line(direct))
 
     target = [_word_key(word) for word in normalize(quote).split()]
     target = [word for word in target if word]
@@ -98,7 +133,7 @@ def find_rects(page, quote: str) -> list[pymupdf.Rect]:
             best_area, best = area, rects
     if best is None:
         return []
-    return _group_by_line(best)
+    return _first_cluster(_group_by_line(best))
 
 
 def locate(

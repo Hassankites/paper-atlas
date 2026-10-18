@@ -1,6 +1,7 @@
 """CLI: python scripts/find_paper.py "nice-slam" [--data-dir PATH]"""
 
 import argparse
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -16,9 +17,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--limit", type=int, default=5)
     args = parser.parse_args(argv)
 
-    data_dir = Path(args.data_dir) if args.data_dir else zotero.default_data_dir()
-    conn = zotero.connect_ro(data_dir)
-    hits = zotero.find_item(conn, args.query, args.limit)
+    try:
+        data_dir = Path(args.data_dir) if args.data_dir else zotero.default_data_dir()
+    except FileNotFoundError as error:
+        print(f"error: {error}")
+        print("hint: pass --data-dir, or set ZOTERO_DATA to the folder with zotero.sqlite")
+        return 2
+
+    conn = None
+    try:
+        conn = zotero.connect_ro(data_dir)
+        hits = zotero.find_item(conn, args.query, args.limit)
+    except (OSError, sqlite3.DatabaseError) as error:
+        print(f"error: cannot read {data_dir}: {error}")
+        return 2
+    finally:
+        if conn is not None:
+            conn.close()
 
     if not hits:
         print(f"no item matches {args.query!r} in {data_dir}")

@@ -24,6 +24,8 @@ HEADINGS = {
         "new": "新造的",
         "pain_cost": "代价是{cost}",
         "colon": "：",
+        "limits": "存疑",
+        "basis": "推断依据",
         "columns_figure": "| 图表 | 它回答什么 | 支撑 | 关键数字 | 没证明什么 | 页 |",
         "terms_header": "| Term | 中文 |",
         "page": "p.{page}",
@@ -45,6 +47,8 @@ HEADINGS = {
         "new": "New",
         "pain_cost": "the cost is {cost}",
         "colon": ": ",
+        "limits": "Open questions",
+        "basis": "Inference basis",
         "columns_figure": "| Item | Question | Supports | Key numbers | Does not prove | Page |",
         "terms_header": "| Term | Chinese |",
         "page": "p.{page}",
@@ -203,13 +207,32 @@ def render(map_dict: dict, lang: str = "zh") -> str:
         )
     lines.append("")
 
+    bases = []
+    for choice in choices:
+        if choice.get("basis_quote") and (
+            choice.get("alternative_inferred") or choice.get("cost_inferred")
+        ):
+            bases.append((choice.get("choice", ""), choice["basis_quote"], choice.get("page")))
+    for concept in map_dict.get("concepts") or []:
+        if concept.get("basis_quote"):
+            bases.append((concept.get("term", ""), concept["basis_quote"], concept.get("page")))
+    if bases:
+        lines.append(f"*{labels['basis']}*")
+        lines.append("")
+        for subject, basis, page in bases:
+            lines.append(f"- {subject} —— “{basis}”（{_page(labels, page)}）")
+        lines.append("")
+
     strength = map_dict.get("strength") or []
     if strength:
         lines.append(f"## {labels['strength']}")
         lines.append("")
         for item in strength:
             lines.append(f"- {item.get('text', '')}  ")
-            lines.append(f"  {_page(labels, item.get('page'))} · “{item.get('quote', '')}”")
+            source = item.get("quote") or item.get("basis_quote")
+            if source:
+                marker = "" if item.get("quote") else labels["inferred"]
+                lines.append(f"  {_page(labels, item.get('page'))} · “{source}”{marker}")
         lines.append("")
 
     concepts = map_dict.get("concepts") or []
@@ -235,7 +258,7 @@ def render(map_dict: dict, lang: str = "zh") -> str:
 
     limits = map_dict.get("limits") or []
     if limits:
-        lines.append("---")
+        lines.append(f"## {labels['limits']}")
         lines.append("")
         for item in limits:
             lines.append(f"> {item.get('text', '')}  ")

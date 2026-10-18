@@ -26,6 +26,9 @@ def main(argv: list[str] | None = None) -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     structure = extract.extract_structure(pdf)
+    if extract.is_textless(structure):
+        print("error: no text layer in this PDF; scanned PDFs are out of scope")
+        return 2
     crops = extract.render_figures(structure, pdf, out_dir / "figs", dpi=args.dpi)
     structure["figures"] = crops
 

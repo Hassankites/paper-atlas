@@ -2,28 +2,19 @@
 
 from __future__ import annotations
 
-import os
 import platform
 import sys
 from importlib.metadata import version
 from pathlib import Path
 
+from paper_atlas import zotero
+
 
 def _zotero_data_dir() -> Path | None:
-    """Return the first candidate directory that holds a Zotero database."""
-    candidates: list[Path] = []
-    env = os.environ.get("ZOTERO_DATA")
-    if env:
-        candidates.append(Path(env))
-    candidates.append(Path.home() / "Zotero")
-    candidates.append(Path.home() / "Library" / "Application Support" / "Zotero")
-    for candidate in candidates:
-        try:
-            if (candidate / "zotero.sqlite").exists():
-                return candidate
-        except OSError:
-            continue
-    return None
+    try:
+        return zotero.default_data_dir()
+    except FileNotFoundError:
+        return None
 
 
 def check() -> dict:

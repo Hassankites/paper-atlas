@@ -41,8 +41,9 @@ To keep the map in your library, drag `map.md` onto the item in Zotero.
 
 ## Highlights and annotations, in two steps
 
-1. `annotate.py --apply` writes standard PDF highlights into the file. Reopen the PDF in
-   Zotero and they are there — readable, but read-only.
+1. `annotate.py --apply` writes standard PDF highlights into the file, after copying it to
+   `*.paper-atlas.bak.pdf`. Reopen the PDF in Zotero and they are there — readable, but
+   read-only.
 2. In the Zotero reader, **File → Import Annotations** turns them into real Zotero
    annotations: editable, searchable, synced, and usable with *Create Note from
    Annotations*. No API key needed.
