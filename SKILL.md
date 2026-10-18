@@ -68,23 +68,30 @@ Zotero — it becomes an attachment next to the PDF.
 
 ## Voice
 
-Annotations are read while someone is mid-paper, so they must sound like a labmate
-leaning over, not a report generator.
+Annotations are read while someone is mid-paper, so they must sound like a colleague
+stating a fact, not a report generator and not a copywriter.
 
 - One idea per note. ~40 characters in Chinese, or ~15 words in English. Short
   sentences. Concrete nouns.
-- Say the judgement, not the process: 「粗层故意做糙，专门管没看见的地方」 beats
-  「本方法采用了低分辨率粗层以处理未观测区域」.
-- Banned: 旨在、从而实现、赋能、有效提升、进一步、综上所述；三段式口号
-  （「本可以…｜解决…｜代价…」）当万能句式；连着三个四字词。
-- No bullet labels inside a note. If you need all three of alternative / solves / cost
-  for a choice, the map table already has them — the note can pick the one thing that
-  matters.
-- The template in `annotate.py` is a fallback for entries without a `note`. When you
-  care about the wording, write the `note` yourself.
-- English output follows the same rule: "the coarse grid is deliberately blurry, and
-  that is what makes unseen rooms tractable", not "a low-resolution coarse level is
-  employed to handle unobserved regions".
+- State the fact and the consequence: 「粗层使用 2m 分辨率，用于预测未观测区域」. Not
+  「粗层故意做糙，专门管没看见的地方」 — that is a slogan.
+- **No metaphors.** Systems do not 撑不住, 崩, 生病, have 天花板, or 装进 anything. Say what
+  happens to the numbers or the geometry.
+- **No clipped verdicts.** 「好看，但没有数字」 is a punchline; write 「属于定性结果，没有误差指标」.
+- **No colon reveals** (「解法不神秘：…」), no 翻案 framing (「不是 A，而是 B」), no
+  「说白了 / 说穿了 / 先说结论」.
+- Copy the numbers and the nouns from the paper. Every adjective you add is a claim the
+  paper does not make.
+- No bullet labels inside a note. If a choice needs all three of alternative / solves /
+  cost, the map table already has them; the note states the one thing that matters.
+- The template in `annotate.py` is a fallback for entries without a `note`. When you care
+  about the wording, write the `note` yourself.
+- English follows the same rule: "the coarse level runs at 2 m and predicts unobserved
+  regions", not "the coarse level is deliberately blurry, and that is what makes unseen
+  rooms tractable".
+- If the `lieflat-less-ai-tone` skill is installed, run every `note` and the map prose
+  through its checklist before writing. Its whitelist names the same triggers this
+  section is aiming at.
 
 ## The map
 
