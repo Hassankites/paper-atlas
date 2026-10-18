@@ -36,6 +36,12 @@ python scripts/doctor.py            # 环境自检
 - **推断必须标注**：`alternative` / `cost` / `strength` 允许是推断，但要标 `*_inferred` 并给出 `basis_quote`，且不进高光。
 - **只测过 Windows + Zotero 10.0.2**：代码是 pathlib/stdlib，macOS/Linux 未实测。
 
+## 文字风格
+
+批注和地图正文按 `lieflat-less-ai-tone` 的规则清理过一遍（禁比喻、禁短句下判断、禁冒号揭晓、
+禁翻案腔）。`SKILL.md` 的 Voice 一节是这套规则的精简版，供没装该 skill 的用户使用。如果你觉得
+仍有 AI 味，直接指到具体句子即可；`reference/example-nice-slam.md` 里有二十条批注原文可对照。
+
 ## 特别想被挑的地方
 
 1. **锚定精度**：`anchors.py` 的降级阶梯（去连字符 → 归一化 → 取最紧凑一处）在真实两栏论文上够不够稳；多命中判定的阈值合不合理。
