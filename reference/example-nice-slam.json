@@ -170,21 +170,21 @@
       "label": "Table 4",
       "page": 6,
       "caption_quote": "Our scene representation does not only improve the reconstruction and tracking quality",
-      "question": "该表示的计算代价是多少？",
-      "supports": "分层表示的代价：更多参数与耗时",
-      "key_numbers": "与对照的参数量/耗时对比（数值见表格）",
-      "caveat": "只在单一硬件上测量；没有给出内存随场景规模的变化曲线",
-      "note": "与对比方法比较参数量和运行时间，本文两项都更高。"
+      "question": "该表示的计算量是多少？",
+      "supports": "分层表示的计算量低于单个 MLP",
+      "key_numbers": "查询一个 3D 点所需 FLOPs 为 iMAP 的 1/4；追踪与建图分别快 2 倍和 3 倍以上",
+      "caveat": "iMAP 的运行时间取自原论文 [47]，不是同一硬件实测；没有给出内存随场景规模的曲线",
+      "note": "查询一个 3D 点所需 FLOPs 为 iMAP 的 1/4，追踪与建图分别快 2 倍和 3 倍以上。"
     },
     {
       "label": "Table 5",
       "page": 7,
       "caption_quote": "We investigate the usefulness of local BA, color representation, as well as our keyframe selection strategy",
       "question": "各个设计选择的独立贡献是多少？",
-      "supports": "冻结解码器 / local BA / 颜色 三项的合并贡献",
+      "supports": "local BA、颜色表示、关键帧策略的各自贡献",
       "key_numbers": "各跑 5 次取均值与标准差，ScanNet 6 个场景平均",
       "caveat": "只在 ScanNet 的 6 个场景上平均；消融项之间可能互相影响",
-      "note": "去掉 local BA、颜色表示或改用 iMAP 关键帧策略后，指标均下降。"
+      "note": "去掉 local BA、颜色表示或改用 iMAP 关键帧策略后，ATE RMSE 均上升。"
     },
     {
       "label": "Figure 8",
