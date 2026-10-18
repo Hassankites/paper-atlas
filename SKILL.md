@@ -88,8 +88,20 @@ leaning over, not a report generator.
 
 ## The map
 
-Seven sections: claim / causal chain / decision points / evidence map / how strong /
-prerequisites / terms. The decision table's **"could have been"** column is the point —
+Eight sections: claim / **why it hurts** / **what is new** / causal chain / decision points /
+evidence map / how strong / prerequisites + terms.
+
+Two of them carry the weight, because a good summary already does the rest:
+
+- **痛点 / Why it hurts** — name who feels it, what the symptom is, and what it costs them
+  (a rescan, a manual cleanup, a room-sized limit). "Prior methods are not scalable" is not
+  a pain; "you can only scan one room, so a flat means starting over" is.
+- **创新点 / What is new** — one row per claimed contribution, compared against a *named*
+  prior work, with an honest **borrowed vs built** column. Most papers borrow most of their
+  stack (a decoder, a renderer, a loss); saying which parts are new is the point. If every
+  row is "built", you probably have not read the related work closely enough.
+
+The decision table's **"could have been"** column is the other thing a summary never has —
 without it a decision is just a description.
 
 ## Failure handling

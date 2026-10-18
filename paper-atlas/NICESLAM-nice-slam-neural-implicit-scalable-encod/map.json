@@ -260,5 +260,47 @@
       "en": "frustum",
       "zh": "视锥"
     }
+  ],
+  "pain": [
+    {
+      "who": "扫多房间公寓的人",
+      "symptom": "重建被抹平，跨房间时追踪开始漂",
+      "cost": "平层得重扫，或者事后手工补 mesh",
+      "quote": "significant performance drops are observed in both the dense reconstruction and camera tracking accuracy",
+      "page": 0
+    },
+    {
+      "who": "用隐式表示做产品的人",
+      "symptom": "单 MLP 每帧都要全局更新，越跑越忘",
+      "cost": "精度和规模只能二选一，最后只能跑单间",
+      "quote": "a single multi-layer perceptron (MLP) to represent the entire scene",
+      "page": 0
+    }
+  ],
+  "novelty": [
+    {
+      "what": "分层特征网格，而且只更新视锥内的特征",
+      "versus": "iMAP 的单个 MLP 全局更新",
+      "borrowed": false,
+      "why": "第一次让隐式 SLAM 有了局部可更新性——这是能扩展的前提，不是调参",
+      "quote": "a hierarchical scene representation",
+      "page": 0
+    },
+    {
+      "what": "粗层网格专门负责没观测到的地方，给追踪兜底",
+      "versus": "iMAP 完全没有外推能力",
+      "borrowed": false,
+      "why": "把「补全」和「细节」拆成两个容量不同的模块，而不是指望一个网络全包",
+      "quote": "predict approximate occupancy values outside of the observed geometry",
+      "page": 2
+    },
+    {
+      "what": "ConvONet 解码器 + NeRF 体渲染 + 方差归一化深度损失",
+      "versus": "ConvONet、NeRF、iMAP",
+      "borrowed": true,
+      "why": "整块搬来，只改了「训练解码器」为「冻结解码器、只训特征」",
+      "quote": "pre-trained as part of ConvONet",
+      "page": 2
+    }
   ]
 }

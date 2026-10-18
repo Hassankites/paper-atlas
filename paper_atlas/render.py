@@ -9,6 +9,8 @@ from pathlib import Path
 HEADINGS = {
     "zh": {
         "claim": "一句话主张",
+        "pain": "痛点",
+        "novelty": "创新点",
         "chain": "因果链",
         "choices": "选择点",
         "figures": "图表证据",
@@ -17,12 +19,19 @@ HEADINGS = {
         "terms": "术语表",
         "inferred": "（推断）",
         "columns_choice": "| 选择 | 本可以怎么做 | 解决了什么 | 代价 | 出处 |",
+        "columns_novelty": "| 创新 | 相对什么 | 来源 | 凭什么算新 | 出处 |",
+        "borrowed": "借来的",
+        "new": "新造的",
+        "pain_cost": "代价是{cost}",
+        "colon": "：",
         "columns_figure": "| 图表 | 它回答什么 | 支撑 | 关键数字 | 没证明什么 | 页 |",
         "terms_header": "| Term | 中文 |",
         "page": "p.{page}",
     },
     "en": {
         "claim": "The Claim",
+        "pain": "Why it hurts",
+        "novelty": "What is new",
         "chain": "The Chain",
         "choices": "Decision Points",
         "figures": "Evidence Map",
@@ -31,6 +40,11 @@ HEADINGS = {
         "terms": "Terms",
         "inferred": " (inferred)",
         "columns_choice": "| Choice | Could have | Solves | Costs | Where |",
+        "columns_novelty": "| New | Compared with | Origin | Why it counts | Where |",
+        "borrowed": "Borrowed",
+        "new": "New",
+        "pain_cost": "the cost is {cost}",
+        "colon": ": ",
         "columns_figure": "| Item | Question | Supports | Key numbers | Does not prove | Page |",
         "terms_header": "| Term | Chinese |",
         "page": "p.{page}",
@@ -92,6 +106,42 @@ def render(map_dict: dict, lang: str = "zh") -> str:
         lines.append(f"> {claim.get('text', '')}")
         lines.append("")
         lines.append(f"{_page(labels, claim.get('page'))} · “{claim.get('quote', '')}”")
+        lines.append("")
+
+    pain = map_dict.get("pain") or []
+    if pain:
+        lines.append(f"## {labels['pain']}")
+        lines.append("")
+        for item in pain:
+            sentence = (
+                f"- **{item.get('who', '')}**{labels['colon']}{item.get('symptom', '')}"
+            )
+            if item.get("cost"):
+                sentence += "，" + labels["pain_cost"].format(cost=item["cost"])
+            lines.append(sentence + f"（{_page(labels, item.get('page'))}）")
+        lines.append("")
+
+    novelty = map_dict.get("novelty") or []
+    if novelty:
+        lines.append(f"## {labels['novelty']}")
+        lines.append("")
+        lines.append(labels["columns_novelty"])
+        lines.append("| --- | --- | --- | --- | --- |")
+        for item in novelty:
+            origin = labels["borrowed"] if item.get("borrowed") else labels["new"]
+            lines.append(
+                "| "
+                + " | ".join(
+                    [
+                        _cell(item.get("what", "")),
+                        _cell(item.get("versus", "")),
+                        origin,
+                        _cell(item.get("why", "")),
+                        _page(labels, item.get("page")),
+                    ]
+                )
+                + " |"
+            )
         lines.append("")
 
     chain = map_dict.get("chain") or []

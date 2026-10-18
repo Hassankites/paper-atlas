@@ -9,6 +9,8 @@ turns it into highlights; `render_map.py` turns it into `map.md`.
 {
   "paper": {"title": "…", "arxiv": "…", "zotero_key": "ABCD1234", "pdf": "…"},
   "claim": {...},
+  "pain": [...],
+  "novelty": [...],
   "chain": [...],
   "choices": [...],
   "figures": [...],
@@ -18,6 +20,10 @@ turns it into highlights; `render_map.py` turns it into `map.md`.
   "terms": [...]
 }
 ```
+
+`pain` and `novelty` are **not highlighted** — they are the map's analytical layer, and
+the highlight budget stays for sentences in the paper. They carry an optional `quote`
+checked by the verifier.
 
 `paper.zotero_key` becomes part of every annotation id (`pa-<key>-<entry>`), which is
 what makes a second run skip instead of duplicating.
@@ -42,6 +48,16 @@ what makes a second run skip instead of duplicating.
 | `cost` + `cost_inferred` | what it gives up |
 | `basis_quote` | the sentence an inference rests on — required whenever `*_inferred` is true; may live on any page |
 | `note` | the annotation text, written in the Voice of `SKILL.md`. Wins over the template |
+
+**Pain and novelty** (map-only):
+
+| Field | Where | Meaning |
+| --- | --- | --- |
+| `who`, `symptom`, `cost` | pain | who feels it, what they see, what it costs them |
+| `what` | novelty | the claimed contribution, in one line |
+| `versus` | novelty | the named prior work it is new relative to |
+| `borrowed` | novelty | `true` when the paper reuses an existing component unchanged |
+| `why` | novelty | why this counts as new (or why the borrowing is honest) |
 
 **Figures:**
 
