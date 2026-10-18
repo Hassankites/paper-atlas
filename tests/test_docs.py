@@ -32,8 +32,9 @@ def test_skill_states_the_hard_rules():
 def test_skill_carries_the_voice_guide():
     text = Path("SKILL.md").read_text(encoding="utf-8")
     assert "## Voice" in text
-    assert "旨在" in text  # a banned phrase example
+    assert "No metaphors" in text
     assert "15 words" in text
+    assert "lieflat-less-ai-tone" in text
 
 
 def test_skill_names_the_two_field_traps():
