@@ -65,6 +65,22 @@ def test_comment_never_equals_quote(valid_map, doc):
         assert len(item.comment) <= 200
 
 
+def test_note_overrides_the_template(valid_map, doc):
+    valid_map["choices"][0]["note"] = "拿全局 MLP 换局部更新，参数多了但稳。"
+    choice = next(
+        item for item in annotate.plan(valid_map, doc) if item.role == "choice"
+    )
+    assert "拿全局 MLP 换局部更新" in choice.comment
+    assert choice.comment.startswith("[选择]")
+
+
+def test_note_is_clipped_to_200_characters(valid_map, doc):
+    valid_map["claim"]["note"] = "很长" * 300
+    claim = next(item for item in annotate.plan(valid_map, doc) if item.role == "claim")
+    assert claim.comment.count("很长") > 50
+    assert len(claim.comment) <= 200
+
+
 def test_comments_do_not_leak_internal_ids(valid_map, doc):
     for item in annotate.plan(valid_map, doc):
         assert not re.search(r"\b[cdl]\d\b", item.comment), item.comment

@@ -113,6 +113,12 @@ def _comment(role: str, entry: dict, labels: dict, lang: str) -> str:
     else:
         body = entry.get("text", "")
         head = labels["limit"]
+
+    # A note written by the agent wins over the template: it reads like a
+    # person talking to a labmate instead of a form with three fields.
+    note = (entry.get("note") or "").strip()
+    if note:
+        body = note
     return _clip(f"[{head}] {body}")
 
 
