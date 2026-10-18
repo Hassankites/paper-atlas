@@ -1,0 +1,9 @@
+__pycache__/
+.pytest_cache/
+.venv/
+.pylibs/
+work/
+paper-atlas/
+*.paper-atlas.bak.pdf
+pytest-cache-files-*/
+.superpowers/
