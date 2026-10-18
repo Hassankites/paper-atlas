@@ -1,0 +1,250 @@
+{
+  "paper": {
+    "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention",
+    "arxiv": "2309.06180",
+    "zotero_key": "VLLM",
+    "pdf": "work/broad/vllm.pdf"
+  },
+  "claim": {
+    "text": "把 KV cache 切成固定大小的块并按块表寻址，消除连续分配造成的显存浪费，从而提高批量大小与吞吐。",
+    "quote": "PagedAttention, an attention algorithm inspired by the operating system’s (OS) solution to memory fragmentation and sharing",
+    "page": 1,
+    "note": "把 KV cache 切成块、用块表寻址，避免按最大长度预分配。"
+  },
+  "pain": [
+    {
+      "who": "部署 LLM 推理服务的团队",
+      "symptom": "按请求最大长度预分配连续显存，产生内部与外部碎片",
+      "cost": "KV cache 中大量显存无法用于存放请求，批量大小受限",
+      "quote": "the existing systems [31, 60] suffer from internal and external memory fragmentation",
+      "page": 1
+    },
+    {
+      "who": "提供并行采样与 beam search 的服务",
+      "symptom": "多个输出序列共享同一段提示，但系统无法复用这部分 KV cache",
+      "cost": "同一提示被重复存储，可用批量进一步下降",
+      "quote": "the existing systems cannot exploit the opportunities for memory sharing",
+      "page": 1
+    }
+  ],
+  "novelty": [
+    {
+      "what": "把 KV cache 存成非连续的块，按块做注意力计算",
+      "versus": "连续预分配的 KV cache",
+      "borrowed": false,
+      "why": "块之间不必相邻，显存浪费不再随请求最大长度放大",
+      "quote": "the attention key and values vectors are stored as non-contiguous blocks",
+      "page": 4
+    },
+    {
+      "what": "逻辑块到物理块的块表映射",
+      "versus": "操作系统的虚拟内存分页",
+      "borrowed": true,
+      "why": "直接借用分页思想，把块表换成了请求级的映射表",
+      "quote": "virtual memory with paging",
+      "page": 1
+    },
+    {
+      "what": "迭代级调度，请求完成即换入新请求",
+      "versus": "cellular batching 与 iteration-level scheduling",
+      "borrowed": true,
+      "why": "沿用已有调度思路，与分块 KV cache 配合使用",
+      "quote": "fine-grained batching mechanisms",
+      "page": 2
+    }
+  ],
+  "chain": [
+    {
+      "id": "c1",
+      "step": "前人做法",
+      "text": "为每个请求按最大可能长度预分配一段连续显存。",
+      "quote": "To store the KV cache of a request in contiguous space, they pre-allocate",
+      "page": 1,
+      "note": "现有系统按请求的最大长度预分配一段连续显存。"
+    },
+    {
+      "id": "c2",
+      "step": "后果",
+      "text": "预分配方案带来三类显存浪费，实际可用容量远低于显存总量。",
+      "quote": "the chunk pre-allocation scheme in existing systems has three primary sources of memory wastes",
+      "page": 3,
+      "note": "预分配方案有三类显存浪费，实际可用容量远低于显存总量。"
+    },
+    {
+      "id": "c3",
+      "step": "待解决的问题",
+      "text": "浪费的显存无法用于新请求，批量大小与吞吐因此受限。",
+      "quote": "The compute utilization in serving LLMs can be improved by batching multiple requests",
+      "page": 2,
+      "note": "浪费的显存无法用于新请求，批量大小与吞吐因此受限。"
+    },
+    {
+      "id": "c4",
+      "step": "本文的做法",
+      "text": "用块级内存管理替代连续预分配。",
+      "quote": "vLLM uses block-level memory management",
+      "page": 1,
+      "note": "vLLM 用块级内存管理替代按请求的连续预分配。"
+    }
+  ],
+  "choices": [
+    {
+      "id": "d1",
+      "choice": "KV cache 按固定大小切块，注意力在块上计算",
+      "quote": "the attention key and values vectors are stored as non-contiguous blocks",
+      "page": 4,
+      "alternative": "按请求最大长度一次性分配连续空间",
+      "alternative_inferred": true,
+      "basis_quote": "To store the KV cache of a request in contiguous space, they pre-allocate",
+      "solves": "显存浪费不再随请求最大长度放大",
+      "cost": "块大小引入块内碎片，最后一块通常填不满",
+      "cost_inferred": true,
+      "note": "KV cache 切块存放，注意力在块上计算；最后一块会有块内碎片。"
+    },
+    {
+      "id": "d2",
+      "choice": "用块表记录逻辑块到物理块的映射",
+      "quote": "the mapping between logical and physical KV blocks of each request",
+      "page": 5,
+      "alternative": "用指针链直接串起物理块",
+      "alternative_inferred": true,
+      "basis_quote": "the mapping between logical and physical KV blocks of each request",
+      "solves": "块可以分散存放，寻址仍是常数时间",
+      "cost": "每次访问多一次块表查询",
+      "cost_inferred": true,
+      "note": "块表记录逻辑块到物理块的映射，块可以分散存放。"
+    },
+    {
+      "id": "d3",
+      "choice": "多个序列共享同一段 KV 块，写入时才复制",
+      "quote": "Copy-on-write",
+      "page": 6,
+      "alternative": "每个序列各存一份 KV cache",
+      "alternative_inferred": true,
+      "basis_quote": "the existing systems cannot exploit the opportunities for memory sharing",
+      "solves": "并行采样与 beam search 复用提示部分的 KV cache",
+      "cost": "写时复制需要额外的引用计数与块管理",
+      "cost_inferred": true,
+      "note": "共享同一段 KV 块，写入时才复制，供并行采样与 beam search 复用。"
+    },
+    {
+      "id": "d4",
+      "choice": "显存不足时在换出与重算之间选择",
+      "quote": "we copy evicted blocks to the CPU memory",
+      "page": 7,
+      "alternative": "直接拒绝新请求或降低批量",
+      "alternative_inferred": true,
+      "basis_quote": "batch size",
+      "solves": "在显存受限时仍能维持批量",
+      "cost": "换出需要 PCIe 传输，重算需要额外计算",
+      "cost_inferred": true,
+      "note": "显存不足时在换出与重算之间选择，两者都有代价。"
+    }
+  ],
+  "figures": [
+    {
+      "label": "Figure 2",
+      "page": 1,
+      "caption_quote": "Average percentage of memory wastes in different LLM serving systems",
+      "question": "现有系统的显存浪费有多少？",
+      "supports": "碎片是主要瓶颈",
+      "key_numbers": "按论文正文，实际用于 KV cache 的比例只有两到四成",
+      "caveat": "只统计特定模型与负载，不代表所有服务场景",
+      "note": "不同服务系统的显存浪费比例，碎片是主要来源。"
+    },
+    {
+      "label": "Figure 5",
+      "page": 4,
+      "caption_quote": "Illustration of the PagedAttention algorithm",
+      "question": "分块之后注意力怎么算？",
+      "supports": "分块 KV cache 可行",
+      "key_numbers": "键值向量按块存放，块之间不连续",
+      "caveat": "示意图，不含吞吐数据",
+      "note": "PagedAttention 示意：键值向量按非连续块存放。"
+    },
+    {
+      "label": "Figure 4",
+      "page": 4,
+      "caption_quote": "vLLM system overview",
+      "question": "系统由哪几部分组成？",
+      "supports": "块级管理落到工程实现",
+      "key_numbers": "调度器与块管理器分工",
+      "caveat": "架构图，不含性能证据",
+      "note": "vLLM 系统组成，调度器与块管理器分工。"
+    },
+    {
+      "label": "Figure 6",
+      "page": 5,
+      "caption_quote": "Block table translation in vLLM",
+      "question": "逻辑块怎样 Translation 到物理块？",
+      "supports": "块表映射",
+      "key_numbers": "每个请求维护一张块表",
+      "caveat": "示意图，不含访存开销",
+      "note": "块表把逻辑块翻译成物理块，每个请求一张表。"
+    },
+    {
+      "label": "Table 1",
+      "page": 8,
+      "caption_quote": "Model sizes and server configurations",
+      "question": "实验用的模型和硬件是什么？",
+      "supports": "结果的可比范围",
+      "key_numbers": "OPT 与 LLM 模型规模、GPU 配置",
+      "caveat": "只覆盖论文选定的模型与单机配置",
+      "note": "实验所用模型规模与服务器配置。"
+    },
+    {
+      "label": "Figure 17",
+      "page": 11,
+      "caption_quote": "Performance on chatbot workload",
+      "question": "在真实聊天负载上吞吐如何？",
+      "supports": "端到端收益",
+      "key_numbers": "与 FasterTransformer、Orca 的吞吐对比",
+      "caveat": "负载取自特定数据集的请求轨迹",
+      "note": "聊天负载下与 FasterTransformer、Orca 的吞吐对比。"
+    }
+  ],
+  "strength": [],
+  "concepts": [
+    {
+      "term": "KV cache",
+      "gloss": "自回归生成时缓存历史 token 的键值向量，避免每个新 token 重算全部注意力。",
+      "page": 0
+    },
+    {
+      "term": "internal fragmentation",
+      "gloss": "按最大长度分配后，实际序列较短，剩余空间无法给别的请求使用。",
+      "page": 1
+    },
+    {
+      "term": "copy-on-write",
+      "gloss": "多个序列共享同一物理块，任一方要写入时才复制出新块。",
+      "page": 6
+    }
+  ],
+  "limits": [
+    {
+      "text": "换出与重算的速度取决于 CPU 与 GPU 之间的带宽以及 GPU 算力，不是固定收益。",
+      "quote": "The performances of swapping and recomputation depend on the bandwidth between CPU RAM and GPU memory",
+      "page": 7,
+      "note": "换出与重算的收益取决于 CPU-GPU 带宽和 GPU 算力。"
+    }
+  ],
+  "terms": [
+    {
+      "en": "KV cache",
+      "zh": "键值缓存"
+    },
+    {
+      "en": "block table",
+      "zh": "块表"
+    },
+    {
+      "en": "copy-on-write",
+      "zh": "写时复制"
+    },
+    {
+      "en": "throughput",
+      "zh": "吞吐量"
+    }
+  ]
+}

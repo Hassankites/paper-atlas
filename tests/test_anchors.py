@@ -30,6 +30,32 @@ def test_find_rects_returns_empty_for_absent_quote(two_column_pdf):
     assert anchors.find_rects(page, "quantum banana") == []
 
 
+def test_hyphen_inside_a_word_survives_a_line_break(tmp_path):
+    doc = pymupdf.open()
+    page = doc.new_page(width=595, height=842)
+    page.insert_text((72, 100), "we compare fine-", fontsize=10)
+    page.insert_text((72, 114), "tuning against adapters", fontsize=10)
+    doc.save(tmp_path / "hyphen.pdf")
+
+    page = pymupdf.open(tmp_path / "hyphen.pdf")[0]
+    assert anchors.find_rects(page, "fine-tuning against adapters") != []
+
+
+def test_hyphen_mismatch_between_quote_and_page_still_matches(tmp_path):
+    doc = pymupdf.open()
+    page = doc.new_page(width=595, height=842)
+    page.insert_text((72, 100), "we freeze the pretrained weights", fontsize=10)
+    doc.save(tmp_path / "pretrained.pdf")
+
+    page = pymupdf.open(tmp_path / "pretrained.pdf")[0]
+    assert anchors.find_rects(page, "freeze the pre-trained weights") != []
+
+
+def test_normalize_unpacks_ligatures():
+    assert anchors.normalize("ﬁne-tuning") == "fine-tuning"
+    assert anchors.normalize("eﬀicient") == "efficient"
+
+
 def test_find_rects_ignores_terminal_punctuation(two_column_pdf):
     page = pymupdf.open(two_column_pdf)[0]
     # Hyphenated, and the page word ends with a full stop the quote omits.

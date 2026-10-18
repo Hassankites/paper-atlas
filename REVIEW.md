@@ -22,10 +22,12 @@ python scripts/doctor.py            # 环境自检
 1. `SKILL.md` —— skill 本体，硬规则、工作流、Voice、质量门槛都在这里。
 2. `README.md` / `README.zh-CN.md` —— 安装、两步写回、排错。
 3. `reference/map-schema.md` —— `map.json` 字段。
-4. `reference/example-nice-slam.md` —— 一份完整样例（NICE-SLAM），最好先看这个。
-5. `docs/superpowers/specs/2026-10-17-paper-atlas-design.md` —— 设计文档（为什么这么切）。
-6. `docs/superpowers/plans/2026-10-18-paper-atlas.md` —— 实现计划与每个任务的验收点。
-7. `docs/pressure-test.md` —— 有 skill 与无 skill 两个 agent 的对照结果。
+4. `reference/example-nice-slam.md` —— 完整样例（CV / SLAM）。
+5. `reference/example-lora.md`、`reference/example-vllm.md` —— 另外两个方向（NLP、系统）的样例，
+   用来看这套结构在非视觉论文上是否成立。
+6. `docs/superpowers/specs/2026-10-17-paper-atlas-design.md` —— 设计文档（为什么这么切）。
+7. `docs/superpowers/plans/2026-10-18-paper-atlas.md` —— 实现计划与每个任务的验收点。
+8. `docs/pressure-test.md` —— 有 skill 与无 skill 两个 agent 的对照结果。
 
 ## 刻意的取舍（不是遗漏）
 

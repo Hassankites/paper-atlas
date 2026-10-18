@@ -1,0 +1,250 @@
+{
+  "paper": {
+    "title": "LoRA: Low-Rank Adaptation of Large Language Models",
+    "arxiv": "2106.09685",
+    "zotero_key": "LORA",
+    "pdf": "work/broad/lora.pdf"
+  },
+  "claim": {
+    "text": "冻结预训练权重，只训练注入的低秩矩阵，把可训练参数降到原模型的 0.01%，且不增加推理延迟。",
+    "quote": "freezes the pre-trained model weights and injects trainable rank decomposition matrices into each layer",
+    "page": 0,
+    "note": "冻结预训练权重，只训练注入的低秩矩阵，推理时再合并回去。"
+  },
+  "pain": [
+    {
+      "who": "为每个下游任务部署模型的服务方",
+      "symptom": "全量微调后每个任务都保存一份完整参数副本",
+      "cost": "GPT-3 175B 上，部署多个任务实例的开销不可行",
+      "quote": "deploying independent instances of fine-tuned models, each with 175B parameters, is prohibitively expensive",
+      "page": 0
+    },
+    {
+      "who": "在线推理服务",
+      "symptom": "Adapter 层必须串行执行，无法与主网络并行",
+      "cost": "batch size 为 1 时，GPT-2 medium 上延迟增加约 20%–30%",
+      "quote": "adapter layers have to be processed sequentially",
+      "page": 2
+    }
+  ],
+  "novelty": [
+    {
+      "what": "把权重更新写成低秩分解 BA，训练时只学 A、B",
+      "versus": "Adapter 与 Prefix Tuning",
+      "borrowed": false,
+      "why": "不增加推理路径，部署时可合并回原权重",
+      "quote": "we constrain its update by representing the latter with a low-rank decomposition",
+      "page": 3
+    },
+    {
+      "what": "B 初始化为零，训练开始时增量为零",
+      "versus": "对增量整体做随机初始化",
+      "borrowed": false,
+      "why": "训练起点与原模型等价，避免初始阶段的扰动",
+      "quote": "We use a random Gaussian initialization for A and zero for B",
+      "page": 3
+    },
+    {
+      "what": "Adapter 层与 Prefix Tuning 作为对照",
+      "versus": "Houlsby adapter、prefix tuning",
+      "borrowed": true,
+      "why": "沿用已有方法，只作为基线",
+      "quote": "adding adapter layers",
+      "page": 2
+    }
+  ],
+  "chain": [
+    {
+      "id": "c1",
+      "step": "前人做法",
+      "text": "全量微调为每个任务学习一份与原模型同维度的参数增量。",
+      "quote": "One of the main drawbacks for full fine-tuning is that for each downstream task, we learn a different set of parameters",
+      "page": 2,
+      "note": "全量微调的问题：每个任务都要学一份与原模型同维度的参数增量。"
+    },
+    {
+      "id": "c2",
+      "step": "Adapter 的失效点",
+      "text": "Adapter 层串行执行，在短序列、小批量场景增加延迟。",
+      "quote": "adapter layers have to be processed sequentially",
+      "page": 2,
+      "note": "Adapter 层无法与主网络并行，短序列时延迟上升。"
+    },
+    {
+      "id": "c3",
+      "step": "Prefix Tuning 的失效点",
+      "text": "为适配预留的序列长度会挤占任务输入的长度。",
+      "quote": "reserving a part of the sequence length for adaptation",
+      "page": 2,
+      "note": "Prefix Tuning 要占用序列长度，任务输入可用长度随之减少。"
+    },
+    {
+      "id": "c4",
+      "step": "待解决的问题",
+      "text": "权重更新是否也具有低内在秩，从而可以用更小的子空间表示。",
+      "quote": "we hypothesize the updates to the weights also have a low",
+      "page": 3,
+      "note": "作者假设权重更新同样具有低内在秩，可以用更小的子空间表示。"
+    },
+    {
+      "id": "c5",
+      "step": "本文的做法",
+      "text": "冻结 W0，只让低秩矩阵接收梯度。",
+      "quote": "During training, W0 is frozen and does not receive gradient updates",
+      "page": 3,
+      "note": "训练时冻结 W0，只更新 A、B 两个低秩矩阵。"
+    }
+  ],
+  "choices": [
+    {
+      "id": "d1",
+      "choice": "用秩 r 的低秩分解表示权重更新，r 远小于原始维度",
+      "quote": "we constrain its update by representing the latter with a low-rank decomposition",
+      "page": 3,
+      "alternative": "为每个任务训练完整的增量矩阵",
+      "alternative_inferred": true,
+      "basis_quote": "for each downstream task, we learn a different set of parameters",
+      "solves": "可训练参数降到原模型的 0.01%",
+      "cost": "秩过小可能限制容量；秩接近满秩时退化回全量微调",
+      "note": "用秩远小于原维度的 BA 表示增量，可训练参数降到原模型的 0.01%。"
+    },
+    {
+      "id": "d2",
+      "choice": "A 用高斯初始化，B 初始化为零",
+      "quote": "We use a random Gaussian initialization for A and zero for B",
+      "page": 3,
+      "alternative": "A、B 都做随机初始化",
+      "alternative_inferred": true,
+      "basis_quote": "so ∆W = BA is zero at the beginning of training",
+      "solves": "训练起点与原模型等价，避免初期扰动",
+      "cost": "B 为零时 A 的梯度为零，第一步只更新 B",
+      "cost_inferred": true,
+      "basis_quote2": "so ∆W = BA is zero at the beginning of training",
+      "note": "A 高斯初始化、B 置零，使训练开始时增量为零，起点等于原模型。"
+    },
+    {
+      "id": "d3",
+      "choice": "把增量按 α/r 缩放，α 取第一次尝试的 r 后不再调",
+      "quote": "This scaling helps to reduce the need to retune hyperparameters when we vary r",
+      "page": 3,
+      "alternative": "把 α 当作独立超参与学习率一起调",
+      "alternative_inferred": true,
+      "basis_quote": "tuning α is roughly the same as tuning the learning rate",
+      "solves": "改变秩时不必重新调参",
+      "cost": "α 与学习率耦合，更换优化器后仍需重新确定",
+      "cost_inferred": true,
+      "note": "增量按 α/r 缩放，改变秩时不必重调超参。"
+    },
+    {
+      "id": "d4",
+      "choice": "部署时把 BA 合并回 W0，推理路径不变",
+      "quote": "we can explicitly compute and store W = W0 + BA and perform inference as usual",
+      "page": 3,
+      "alternative": "在推理时保留单独的适配模块",
+      "alternative_inferred": true,
+      "basis_quote": "adapter layers have to be processed sequentially",
+      "solves": "不增加推理延迟",
+      "cost": "切换任务需要重新计算合并后的权重",
+      "cost_inferred": true,
+      "note": "部署时把 BA 合并进 W0，推理路径与原模型相同。"
+    },
+    {
+      "id": "d5",
+      "choice": "多数实验只对 Wq 与 Wv 应用 LoRA",
+      "quote": "we only apply LoRA to Wq and Wv in most experiments for simplicity",
+      "page": 5,
+      "alternative": "对全部线性层应用 LoRA",
+      "alternative_inferred": true,
+      "basis_quote": "We mostly depend on heuristics to select the weight matrices to apply LoRA to",
+      "solves": "可训练参数更少，效果已经足够",
+      "cost": "选哪些矩阵依赖启发式，没有原则性方法",
+      "cost_inferred": true,
+      "note": "多数实验只对 Wq 与 Wv 应用 LoRA，选哪些矩阵靠启发式。"
+    }
+  ],
+  "figures": [
+    {
+      "label": "Figure 1",
+      "page": 0,
+      "caption_quote": "Our reparametrization. We only train A and B",
+      "question": "低秩分解加在权重矩阵的哪一侧？",
+      "supports": "低秩更新替代完整增量",
+      "key_numbers": "只训练 A、B，W0 冻结",
+      "caveat": "示意图，不含实验数据",
+      "note": "示意图：W0 冻结，只训练 A 和 B 两个低秩矩阵。"
+    },
+    {
+      "label": "Figure 2",
+      "page": 7,
+      "caption_quote": "GPT-3 175B validation accuracy vs. number of trainable parameters",
+      "question": "在相同可训练参数下，LoRA 的精度落在什么位置？",
+      "supports": "低秩更新替代完整增量",
+      "key_numbers": "WikiSQL 与 MNLI-matched 上的验证精度对比",
+      "caveat": "只覆盖两个任务；曲线取自单次训练结果",
+      "note": "GPT-3 175B 上验证精度与可训练参数量的关系，覆盖 WikiSQL 和 MNLI-matched。"
+    },
+    {
+      "label": "Table 1",
+      "page": 3,
+      "caption_quote": "Infernece latency of a single forward pass in GPT-2 medium measured in milliseconds",
+      "question": "Adapter 到底增加多少延迟？",
+      "supports": "Adapter 的延迟代价",
+      "key_numbers": "batch size 为 1 时，AdapterL 增加 20.7%，AdapterH 增加 30.3%",
+      "caveat": "只在 GPT-2 medium、单张 Quadro RTX8000 上测量",
+      "note": "GPT-2 medium 单次前向的延迟，batch size 为 1 时两种 Adapter 分别增加 20.7% 和 30.3%。"
+    },
+    {
+      "label": "Table 6",
+      "page": 9,
+      "caption_quote": "Validation accuracy on WikiSQL and MultiNLI with different rank r",
+      "question": "秩要取多大才够？",
+      "supports": "低秩假设成立",
+      "key_numbers": "秩取 1 时已有竞争力",
+      "caveat": "只在两个分类任务上扫描秩",
+      "note": "不同秩在 WikiSQL 与 MultiNLI 上的验证精度，秩取 1 时已有竞争力。"
+    },
+    {
+      "label": "Table 8",
+      "page": 16,
+      "caption_quote": "Fine-tuning significantly outperforms few-shot learning on GPT-3",
+      "question": "微调相对少样本学习有多大差距？",
+      "supports": "任务适配仍然必要",
+      "key_numbers": "GPT-3 175B 上微调优于少样本",
+      "caveat": "附录结果，比较的是微调与少样本，不是 LoRA 与全量微调",
+      "note": "GPT-3 上微调明显优于少样本学习，说明任务适配仍然必要。"
+    }
+  ],
+  "strength": [
+    {
+      "text": "同时报告了 RoBERTa、DeBERTa、GPT-2、GPT-3 四类模型上的结果。",
+      "quote": "LoRA performs on-par or better than fine-tuning in model quality on RoBERTa, DeBERTa, GPT-2, and GPT-3",
+      "page": 0
+    }
+  ],
+  "concepts": [
+    {
+      "term": "low-rank decomposition",
+      "gloss": "把一个矩阵写成两个低秩矩阵的乘积，参数量由 d×k 降为 r×(d+k)。",
+      "page": 3
+    },
+    {
+      "term": "intrinsic rank",
+      "gloss": "任务适配所需的权重更新可能只在一个低维子空间内变化。",
+      "page": 3
+    }
+  ],
+  "limits": [
+    {
+      "text": "把 LoRA 加到哪些权重矩阵上，作者依赖启发式，没有给出选择方法。",
+      "quote": "We mostly depend on heuristics to select the weight matrices to apply LoRA to",
+      "page": 12,
+      "note": "LoRA 加到哪些矩阵上仍靠启发式，论文没有给出选择方法。"
+    }
+  ],
+  "terms": [
+    {"en": "rank", "zh": "秩"},
+    {"en": "adapter layer", "zh": "适配层"},
+    {"en": "prefix tuning", "zh": "前缀调优"},
+    {"en": "intrinsic dimension", "zh": "内在维度"}
+  ]
+}

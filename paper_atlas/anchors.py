@@ -12,8 +12,21 @@ import re
 import pymupdf
 
 
+_LIGATURES = {
+    "\ufb00": "ff",
+    "\ufb01": "fi",
+    "\ufb02": "fl",
+    "\ufb03": "ffi",
+    "\ufb04": "ffl",
+    "\ufb05": "ft",
+    "\ufb06": "st",
+}
+
+
 def normalize(text: str) -> str:
-    """Collapse whitespace and undo hyphenated line breaks."""
+    """Collapse whitespace, unpack ligatures and undo hyphenated line breaks."""
+    for ligature, expansion in _LIGATURES.items():
+        text = text.replace(ligature, expansion)
     text = text.replace("\u00ad", "")
     text = re.sub(r"(\w)-\s*\n\s*(\w)", r"\1\2", text)
     text = text.replace("-\n", "")
@@ -40,6 +53,17 @@ _EDGE_PUNCT = ".,;:!?()[]{}\"'“”‘’"
 def _word_key(word: str) -> str:
     """Strip edge punctuation so a quote without its full stop still matches."""
     return word.strip(_EDGE_PUNCT)
+
+
+def _match_key(word: str) -> str:
+    """Hyphen-insensitive key: a word split at its own hyphen must still match."""
+    return _word_key(normalize(word)).replace("-", "")
+
+
+def _canon(text: str) -> str:
+    return " ".join(
+        part for part in (_match_key(part) for part in normalize(text).split()) if part
+    )
 
 
 def _group_by_line(rects: list[pymupdf.Rect]) -> list[pymupdf.Rect]:
@@ -77,12 +101,6 @@ def _first_cluster(lines: list[pymupdf.Rect]) -> list[pymupdf.Rect]:
     return cluster
 
 
-def _canon(text: str) -> str:
-    return " ".join(
-        word for word in (_word_key(part) for part in normalize(text).split()) if word
-    )
-
-
 def page_text(page) -> str:
     """Reading-order text with hyphenated line breaks stitched."""
     return " ".join(word for _, word in _words(page))
@@ -111,7 +129,7 @@ def find_rects(page, quote: str) -> list[pymupdf.Rect]:
     if direct and _plausible(direct):
         return _first_cluster(_group_by_line(direct))
 
-    target = [_word_key(word) for word in normalize(quote).split()]
+    target = [_match_key(word) for word in normalize(quote).split()]
     target = [word for word in target if word]
     if not target:
         return []
@@ -121,7 +139,7 @@ def find_rects(page, quote: str) -> list[pymupdf.Rect]:
     best: list[pymupdf.Rect] | None = None
     best_area: float | None = None
     for start in range(len(words) - width + 1):
-        window = [_word_key(normalize(word)) for _, word in words[start : start + width]]
+        window = [_match_key(word) for _, word in words[start : start + width]]
         if window != target:
             continue
         rects = [rect for rect, _ in words[start : start + width]]
