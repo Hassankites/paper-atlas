@@ -34,20 +34,29 @@ def _words(page) -> list[tuple[pymupdf.Rect, str]]:
     return joined
 
 
+_EDGE_PUNCT = ".,;:!?()[]{}\"'“”‘’"
+
+
+def _word_key(word: str) -> str:
+    """Strip edge punctuation so a quote without its full stop still matches."""
+    return word.strip(_EDGE_PUNCT)
+
+
 def find_rects(page, quote: str) -> list[pymupdf.Rect]:
     """Return rectangles covering `quote`, or an empty list."""
     direct = page.search_for(quote)
     if direct:
         return direct
 
-    target = normalize(quote).split()
+    target = [_word_key(word) for word in normalize(quote).split()]
+    target = [word for word in target if word]
     if not target:
         return []
 
     words = _words(page)
     width = len(target)
     for start in range(len(words) - width + 1):
-        window = [normalize(word) for _, word in words[start : start + width]]
+        window = [_word_key(normalize(word)) for _, word in words[start : start + width]]
         if window == target:
             rect = words[start][0]
             for extra_rect, _ in words[start + 1 : start + width]:

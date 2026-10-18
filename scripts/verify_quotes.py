@@ -11,6 +11,8 @@ import pymupdf  # noqa: E402
 
 from paper_atlas import verify  # noqa: E402
 
+pymupdf.TOOLS.mupdf_display_errors(False)
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Verify a map against its PDF")

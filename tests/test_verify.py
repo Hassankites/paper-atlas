@@ -78,6 +78,30 @@ def test_inferred_field_with_a_bad_basis_quote_is_an_error(valid_map, doc):
     assert any("basis_quote" in error and "not found" in error for error in report.errors)
 
 
+def test_basis_quote_may_live_far_from_the_choice(tmp_path):
+    doc = pymupdf.open()
+    for _ in range(4):
+        doc.new_page()
+    doc[0].insert_text((72, 72), "the method uses a grid", fontsize=10)
+    doc[3].insert_text((72, 72), "local BA keeps the tracking stable", fontsize=10)
+    map_dict = {
+        "choices": [
+            {
+                "id": "d1",
+                "choice": "grid",
+                "quote": "the method uses a grid",
+                "page": 0,
+                "alternative": "one MLP",
+                "alternative_inferred": True,
+                "basis_quote": "local BA keeps the tracking stable",
+                "solves": "s",
+                "cost": "c",
+            }
+        ]
+    }
+    assert verify.verify(map_dict, doc).errors == []
+
+
 def test_density_cap_is_enforced(valid_map, doc):
     valid_map["chain"] = valid_map["chain"] * 30
     report = verify.verify(valid_map, doc)

@@ -30,6 +30,12 @@ def test_find_rects_returns_empty_for_absent_quote(two_column_pdf):
     assert anchors.find_rects(page, "quantum banana") == []
 
 
+def test_find_rects_ignores_terminal_punctuation(two_column_pdf):
+    page = pymupdf.open(two_column_pdf)[0]
+    # Hyphenated, and the page word ends with a full stop the quote omits.
+    assert anchors.find_rects(page, "scene reconstruction quality on Replica") != []
+
+
 def test_locate_falls_back_one_page(two_column_pdf):
     doc = pymupdf.open(two_column_pdf)
     result = anchors.locate(doc, 1, "scene reconstruction quality")

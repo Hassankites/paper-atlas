@@ -11,6 +11,8 @@ import pymupdf  # noqa: E402
 
 from paper_atlas import anchors, annotate, verify  # noqa: E402
 
+pymupdf.TOOLS.mupdf_display_errors(False)
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Write a map into the PDF")

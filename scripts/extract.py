@@ -7,7 +7,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import pymupdf  # noqa: E402
+
 from paper_atlas import extract  # noqa: E402
+
+pymupdf.TOOLS.mupdf_display_errors(False)
 
 
 def main(argv: list[str] | None = None) -> int:

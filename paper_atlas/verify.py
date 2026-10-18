@@ -25,11 +25,13 @@ class Report:
         return not self.errors
 
 
-def _quote_error(doc, label: str, quote: str, page: int, report: Report) -> None:
+def _quote_error(
+    doc, label: str, quote: str, page: int, report: Report, tolerance: int = 1
+) -> None:
     if not quote or not quote.strip():
         report.errors.append(f"{label}: missing quote")
         return
-    if anchors.locate(doc, page, quote) is None:
+    if anchors.locate(doc, page, quote, tolerance_pages=tolerance) is None:
         report.errors.append(f"{label}: quote not found: {quote[:60]!r}")
 
 
@@ -38,8 +40,9 @@ def _inference_error(doc, label: str, entry: dict, page: int, report: Report) ->
     if not basis:
         report.errors.append(f"{label}: inferred without basis_quote")
         return
+    # The sentence an inference rests on may sit anywhere in the paper.
     _quote_error(
-        doc=doc, label=f"{label}.basis_quote", quote=basis, page=page, report=report
+        doc, f"{label}.basis_quote", basis, page, report, tolerance=doc.page_count
     )
 
 
