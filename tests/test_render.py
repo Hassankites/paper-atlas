@@ -69,6 +69,7 @@ def test_render_turns_zero_based_pages_into_printed_pages(map_dict):
 def test_render_english_headings(map_dict):
     text = render.render(map_dict, lang="en")
     assert "## The Claim" in text and "## Decision Points" in text
+    assert "| Term | Chinese |" in text
 
 
 def test_default_out_dir_sits_under_paper_atlas(map_dict, tmp_path):

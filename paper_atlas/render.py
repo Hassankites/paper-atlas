@@ -18,6 +18,7 @@ HEADINGS = {
         "inferred": "（推断）",
         "columns_choice": "| 选择 | 本可以怎么做 | 解决了什么 | 代价 | 出处 |",
         "columns_figure": "| 图表 | 它回答什么 | 支撑 | 关键数字 | 没证明什么 | 页 |",
+        "terms_header": "| Term | 中文 |",
         "page": "p.{page}",
     },
     "en": {
@@ -31,6 +32,7 @@ HEADINGS = {
         "inferred": " (inferred)",
         "columns_choice": "| Choice | Could have | Solves | Costs | Where |",
         "columns_figure": "| Item | Question | Supports | Key numbers | Does not prove | Page |",
+        "terms_header": "| Term | Chinese |",
         "page": "p.{page}",
     },
 }
@@ -175,7 +177,7 @@ def render(map_dict: dict, lang: str = "zh") -> str:
     lines.append(f"## {labels['terms']}")
     lines.append("")
     if terms:
-        lines.append("| Term | 中文 |")
+        lines.append(labels["terms_header"])
         lines.append("| --- | --- |")
         for term in terms:
             lines.append(f"| {_cell(term.get('en', ''))} | {_cell(term.get('zh', ''))} |")

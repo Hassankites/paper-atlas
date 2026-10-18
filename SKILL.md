@@ -23,6 +23,8 @@ back to a sentence in the paper, and every inference says which sentence it came
 4. **Ask before writing annotations.** Run the dry run, show the count, the colours and
    the exact file that would change, then wait for an explicit yes. No yes, no `--apply`.
    Many readers do not want their library touched; the map alone is a complete answer.
+   If you cannot reach a human (you are a subagent), stop and hand the consent question
+   back to your caller verbatim — do not decide for them.
 5. **20 highlights by default**, 30 with `--density detailed`. A page of highlighter is
    worse than none.
 6. **Never write `zotero.sqlite`.** `find_paper.py` reads a snapshot; the live database
@@ -37,8 +39,14 @@ python scripts/find_paper.py "nice-slam"
 python scripts/extract.py <paper.pdf> --out work/<slug>/
 ```
 
+**If several items match**, list them (title + key + PDF path) and ask which one. Two
+copies of the same paper are common; picking silently writes annotations into the wrong
+item.
+
 Then, in your own words: read `work/<slug>/structure.json`, and **look at the crops**
 under `work/<slug>/figs/` with your image tool before saying what a figure shows.
+Extraction often crops only a couple of figures; when a caption has no crop, render that
+region yourself and look at it — never describe a figure you have only seen the caption of.
 Write `map.json` (schema: `reference/map-schema.md`), then:
 
 ```bash
@@ -63,7 +71,8 @@ Zotero — it becomes an attachment next to the PDF.
 Annotations are read while someone is mid-paper, so they must sound like a labmate
 leaning over, not a report generator.
 
-- One idea per note, under ~40 characters. Short sentences. Concrete nouns.
+- One idea per note. ~40 characters in Chinese, or ~15 words in English. Short
+  sentences. Concrete nouns.
 - Say the judgement, not the process: 「粗层故意做糙，专门管没看见的地方」 beats
   「本方法采用了低分辨率粗层以处理未观测区域」.
 - Banned: 旨在、从而实现、赋能、有效提升、进一步、综上所述；三段式口号

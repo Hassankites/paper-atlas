@@ -33,6 +33,14 @@ def test_skill_carries_the_voice_guide():
     text = Path("SKILL.md").read_text(encoding="utf-8")
     assert "## Voice" in text
     assert "旨在" in text  # a banned phrase example
+    assert "15 words" in text
+
+
+def test_skill_names_the_two_field_traps():
+    text = Path("SKILL.md").read_text(encoding="utf-8")
+    assert "several items match" in text.lower()
+    assert "no crop" in text.lower()
+    assert "subagent" in text.lower()
 
 
 def test_schema_doc_exists():
