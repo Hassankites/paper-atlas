@@ -1,0 +1,90 @@
+import pymupdf
+import pytest
+
+from paper_atlas import verify
+from tests.fixtures.build_paper_fixture import build
+
+TITLE = "Neural Implicit Scalable Encoding"
+BODY = "This paper studies neural implicit SLAM for large indoor scenes."
+HEADING = "1 Introduction"
+FIGURE_CAPTION = "Figure 1: Reconstruction quality on Replica."
+
+
+@pytest.fixture()
+def doc(tmp_path):
+    return pymupdf.open(build(tmp_path / "paper.pdf"))
+
+
+@pytest.fixture()
+def valid_map():
+    return {
+        "paper": {"title": TITLE},
+        "claim": {"text": "hierarchical encoding", "quote": BODY, "page": 0},
+        "chain": [
+            {
+                "id": "c1",
+                "step": "problem",
+                "text": "scaling is hard",
+                "quote": BODY,
+                "page": 0,
+            }
+        ],
+        "choices": [
+            {
+                "id": "d1",
+                "choice": "hierarchical grid",
+                "quote": HEADING,
+                "page": 0,
+                "alternative": "one global MLP",
+                "cost": "more parameters",
+            }
+        ],
+        "figures": [
+            {
+                "label": "Figure 1",
+                "page": 1,
+                "caption_quote": FIGURE_CAPTION,
+                "caveat": "only Replica",
+            }
+        ],
+        "strength": [],
+        "concepts": [],
+        "limits": [],
+    }
+
+
+def test_valid_map_has_no_errors(valid_map, doc):
+    report = verify.verify(valid_map, doc)
+    assert report.errors == []
+    assert report.highlight_count == 4
+
+
+def test_missing_quote_is_an_error(valid_map, doc):
+    valid_map["chain"][0]["quote"] = "this sentence does not exist in the paper"
+    report = verify.verify(valid_map, doc)
+    assert any("quote not found" in error for error in report.errors)
+
+
+def test_inferred_field_requires_basis_quote(valid_map, doc):
+    valid_map["choices"][0]["cost_inferred"] = True
+    report = verify.verify(valid_map, doc)
+    assert any("basis_quote" in error for error in report.errors)
+
+
+def test_inferred_field_with_a_bad_basis_quote_is_an_error(valid_map, doc):
+    valid_map["choices"][0]["alternative_inferred"] = True
+    valid_map["choices"][0]["basis_quote"] = "no such sentence anywhere"
+    report = verify.verify(valid_map, doc)
+    assert any("basis_quote" in error and "not found" in error for error in report.errors)
+
+
+def test_density_cap_is_enforced(valid_map, doc):
+    valid_map["chain"] = valid_map["chain"] * 30
+    report = verify.verify(valid_map, doc)
+    assert any("exceeds" in error for error in report.errors)
+
+
+def test_detailed_density_raises_the_cap(valid_map, doc):
+    valid_map["chain"] = valid_map["chain"] * 20
+    assert verify.verify(valid_map, doc, density="normal").errors
+    assert verify.verify(valid_map, doc, density="detailed").errors == []
