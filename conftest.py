@@ -17,3 +17,7 @@ if sys.platform == "win32":
         return _real_mkdir(path, 0o777, *args, **kwargs)
 
     os.mkdir = _mkdir_without_mode
+
+# pytest.ini points --basetemp at work/pt; pytest creates the leaf but not its
+# parent, and a fresh clone has no work/ directory yet.
+(ROOT / "work").mkdir(exist_ok=True)

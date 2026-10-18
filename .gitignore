@@ -7,3 +7,4 @@ paper-atlas/
 *.paper-atlas.bak.pdf
 pytest-cache-files-*/
 .superpowers/
+*.zip
