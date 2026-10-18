@@ -50,7 +50,7 @@ def _select_targets(page) -> list[tuple[str, str]]:
     return found
 
 
-def write_probe(pdf_path: Path, out_path: Path) -> list[str]:
+def write_probe(pdf_path: Path, out_path: Path, prefix: str = "pa-probe") -> list[str]:
     """Add two highlights carrying Zotero's private keys; return their keys."""
     doc = pymupdf.open(str(pdf_path))
     page = doc[0]
@@ -62,8 +62,10 @@ def write_probe(pdf_path: Path, out_path: Path) -> list[str]:
     for index, (quote, comment) in enumerate(targets, start=1):
         rects = page.search_for(quote)
         annot = page.add_highlight_annot(rects[0])
+        annot.set_colors(stroke=(1.0, 0.831, 0.0))
         annot.set_info(content=comment, title=AUTHOR)
-        key = f"pa-probe-{index}"
+        annot.update()
+        key = f"{prefix}-{index}"
         doc.xref_set_key(annot.xref, "Zotero:AuthorName", _pdf_string(AUTHOR))
         doc.xref_set_key(annot.xref, "Zotero:Color", _pdf_string(COLOR))
         doc.xref_set_key(annot.xref, "Zotero:Key", _pdf_string(key))
@@ -97,6 +99,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("pdf", nargs="?", help="PDF to probe")
     parser.add_argument("--out", help="output copy (default: <name>.probe.pdf)")
+    parser.add_argument("--key-prefix", default="pa-probe")
     parser.add_argument(
         "--check-db", action="store_true", help="count external annotations in Zotero"
     )
@@ -111,7 +114,7 @@ def main(argv: list[str] | None = None) -> int:
     source = Path(args.pdf)
     out = Path(args.out) if args.out else source.with_suffix(".probe.pdf")
     out.parent.mkdir(parents=True, exist_ok=True)
-    keys = write_probe(source, out)
+    keys = write_probe(source, out, args.key_prefix)
     print(f"wrote {len(keys)} highlights: {', '.join(keys)}")
     print(f"copy: {out}")
     print()
