@@ -36,6 +36,17 @@ def test_find_rects_ignores_terminal_punctuation(two_column_pdf):
     assert anchors.find_rects(page, "scene reconstruction quality on Replica") != []
 
 
+def test_far_pair_is_rejected_when_no_contiguous_copy_exists(tmp_path):
+    doc = pymupdf.open()
+    page = doc.new_page(width=595, height=842)
+    page.insert_text((72, 100), "alpha", fontsize=10)
+    page.insert_text((72, 400), "beta", fontsize=10)
+    doc.save(tmp_path / "far.pdf")
+
+    page = pymupdf.open(tmp_path / "far.pdf")[0]
+    assert anchors.find_rects(page, "alpha beta") == []
+
+
 def test_find_rects_prefers_the_compact_occurrence(tmp_path):
     doc = pymupdf.open()
     page = doc.new_page(width=595, height=842)

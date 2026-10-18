@@ -125,6 +125,8 @@ def find_rects(page, quote: str) -> list[pymupdf.Rect]:
         if window != target:
             continue
         rects = [rect for rect, _ in words[start : start + width]]
+        if not _plausible(rects):
+            continue
         union = rects[0]
         for rect in rects[1:]:
             union = union | rect
