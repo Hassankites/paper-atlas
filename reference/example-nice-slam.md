@@ -2,7 +2,7 @@
 
 ## 一句话主张
 
-> 用多层特征网格配合冻结的预训练解码器替换单个 MLP，以同时满足细节、实时和未观测区域的补全。
+> 用多层特征网格配合冻结的预训练几何解码器替换单个 MLP，以同时满足细节、实时和未观测区域的补全。
 
 p.1 · “we present NICE-SLAM, a dense SLAM system that incorporates multi-level local information by introducing a hierarchical scene representation”
 
@@ -15,9 +15,9 @@ p.1 · “we present NICE-SLAM, a dense SLAM system that incorporates multi-leve
 
 | 创新 | 相对什么 | 来源 | 凭什么算新 | 出处 |
 | --- | --- | --- | --- | --- |
-| 分层特征网格，并且只更新视锥内的特征 | iMAP 的单个 MLP 全局更新 | 新造的 | 使隐式 SLAM 的表示可以局部更新，这是扩展到大规模场景的前提 | p.1 |
-| 粗层网格用于预测未观测区域，为追踪提供几何 | iMAP 不具备外推能力 | 新造的 | 把未观测区域的预测与已观测细节交由容量不同的模块分别承担 | p.3 |
-| ConvONet 解码器、NeRF 体渲染与方差归一化深度损失 | ConvONet、NeRF、iMAP | 借来的 | 直接沿用，仅把解码器由训练改为冻结、只训练特征 | p.3 |
+| 分层特征网格，并且只更新视锥内的特征 | iMAP 的单个 MLP 全局更新 | 新造 | 使隐式 SLAM 的表示可以局部更新，这是扩展到大规模场景的前提 | p.1 |
+| 粗层网格用于预测未观测区域，为追踪提供几何 | iMAP 不具备外推能力 | 新造 | 把未观测区域的预测与已观测细节交由容量不同的模块分别承担 | p.3 |
+| ConvONet 解码器、NeRF 体渲染与方差归一化深度损失 | ConvONet、NeRF、iMAP | 原样复用 | 直接沿用；几何解码器由训练改为冻结，颜色解码器从头训练 | p.4 |
 
 ## 因果链
 
@@ -37,7 +37,7 @@ p.1 · “we present NICE-SLAM, a dense SLAM system that incorporates multi-leve
 | 选择 | 本可以怎么做 | 解决了什么 | 代价 | 出处 |
 | --- | --- | --- | --- | --- |
 | 几何分粗/中/细三层，粗层故意做到极低分辨率（2m），专门负责没观测到的地方 | 只用一个高分辨率网格，由网络插值填补未观测区域（推断） | 已观测细节与未观测预测由不同容量的模块承担，粗层计算量低且可外推 | 粗层分辨率低，边界与薄结构依赖中、细层；三层需要分别维护更新节奏，实现上分为三个线程 | p.3 |
-| 解码器全部冻结，只优化网格里的特征 | 像 iMAP 那样端到端同时训练网络权重与场景表示（推断） | 更新只作用于特征，不牵动全局权重，优化更稳定，收敛更快 | 表达上限受预训练先验约束；预训练数据与目标场景差异较大时，细节难以恢复 | p.3 |
+| 几何解码器冻结，只优化网格里的特征 | 像 iMAP 那样端到端同时训练网络权重与场景表示（推断） | 更新只作用于特征，不牵动全局权重，优化更稳定，收敛更快 | 表达上限受预训练先验约束；预训练数据与目标场景差异较大时，细节难以恢复 | p.3 |
 | 关键帧只选与当前帧有视觉重叠的，且只更新视锥范围内的网格 | 按 iMAP 的做法从全部关键帧中选择，以全局更新抑制遗忘（推断） | 每次只需局部更新，计算量与视锥范围相关，同时避免全局更新带来的遗忘 | 视野外的几何保持静止，回环或重访时不会自动校正；快速转动或大范围帧丢失依赖粗层预测 | p.5 |
 | 加一步 local bundle adjustment，把 K 个关键帧的位姿和所有层一起联合优化 | 每帧只优化当前相机位姿，位姿之间不联合优化（推断） | 把累积误差限制在关键帧窗口内，提高追踪稳定性 | 增加一个优化阶段，实时预算更紧张；窗口大小 K 同时影响精度与速度 | p.4 |
 | 颜色不冻结，特征和解码器一起学，用来给追踪提供额外信号 | 只用深度与几何信号做追踪，颜色仅用于可视化（推断） | 几何部分依赖预训练先验，颜色部分依靠观测数据，追踪多一路光度信号 | 颜色存在与 iMAP 相同的遗忘问题，只保持局部一致；全场颜色需要后处理优化 | p.4 |
@@ -57,11 +57,11 @@ p.1 · “we present NICE-SLAM, a dense SLAM system that incorporates multi-leve
 
 *推断依据*
 
-- 几何分粗/中/细三层，粗层故意做到极低分辨率（2m），专门负责没观测到的地方 —— “one feature grid with the same resolution as our fine-level representation”（p.3）
-- 解码器全部冻结，只优化网格里的特征 —— “only optimize the feature grids”（p.3）
-- 关键帧只选与当前帧有视觉重叠的，且只更新视锥范围内的网格 —— “where they select keyframes from the entire scene”（p.5）
-- 加一步 local bundle adjustment，把 K 个关键帧的位姿和所有层一起联合优化 —— “the camera tracking is not only significantly less accurate, but also less robust”（p.4）
-- 颜色不冻结，特征和解码器一起学，用来给追踪提供额外信号 —— “we compare our method without the photometric loss”（p.4）
+- 几何分粗/中/细三层，粗层故意做到极低分辨率（2m），专门负责没观测到的地方 —— “one feature grid with the same resolution as our fine-level representation”（p.8）
+- 几何解码器冻结，只优化网格里的特征 —— “only optimize the feature grids”（p.3）
+- 关键帧只选与当前帧有视觉重叠的，且只更新视锥范围内的网格 —— “where they select keyframes from the entire scene”（p.8）
+- 加一步 local bundle adjustment，把 K 个关键帧的位姿和所有层一起联合优化 —— “the camera tracking is not only significantly less accurate, but also less robust”（p.8）
+- 颜色不冻结，特征和解码器一起学，用来给追踪提供额外信号 —— “we compare our method without the photometric loss”（p.8）
 
 ## 证据强度
 

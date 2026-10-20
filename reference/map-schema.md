@@ -22,11 +22,12 @@ turns it into highlights; `render_map.py` turns it into `map.md`.
 ```
 
 `pain` and `novelty` are **not highlighted** — they are the map's analytical layer, and
-the highlight budget stays for sentences in the paper. They carry an optional `quote`
-checked by the verifier.
+the highlight budget stays for sentences in the paper. Their `quote` is required and is
+checked by the verifier: a pain you cannot point at is usually a property, not a pain.
 
 `paper.zotero_key` becomes part of every annotation id (`pa-<key>-<entry>`), which is
-what makes a second run skip instead of duplicating.
+what makes a second run skip instead of duplicating. Two entries may not share an id —
+the verifier rejects a duplicate, because the PDF would get two marks with one key.
 
 ## Entry fields
 
@@ -34,8 +35,9 @@ what makes a second run skip instead of duplicating.
 
 | Field | Where | Meaning |
 | --- | --- | --- |
-| `quote` | claim, chain, choices, limits, strength | the sentence to highlight |
+| `quote` | claim, chain, choices, limits | the sentence to highlight |
 | `caption_quote` | figures | the caption sentence to highlight |
+| `evidence_quote` | figures (optional) | the sentence or table row a cited number comes from; verified, not highlighted |
 | `page` | all | 0-based page index where the quote lives |
 
 **Judgement** (may be inference):
@@ -47,6 +49,7 @@ what makes a second run skip instead of duplicating.
 | `solves` | what the choice buys |
 | `cost` + `cost_inferred` | what it gives up |
 | `basis_quote` | the sentence an inference rests on — required whenever `*_inferred` is true; may live on any page |
+| `basis_page` | optional; the verifier fills the real page in when it differs |
 | `note` | the annotation text, written in the Voice of `SKILL.md`. Wins over the template |
 
 **Pain and novelty** (map-only):
@@ -54,10 +57,23 @@ what makes a second run skip instead of duplicating.
 | Field | Where | Meaning |
 | --- | --- | --- |
 | `who`, `symptom`, `cost` | pain | who feels it, what they see, what it costs them |
+| `cost_inferred` | pain | `cost` was not written down; marked 「（推断）」 in the map |
 | `what` | novelty | the claimed contribution, in one line |
-| `versus` | novelty | the named prior work it is new relative to |
-| `borrowed` | novelty | `true` when the paper reuses an existing component unchanged |
-| `why` | novelty | why this counts as new (or why the borrowing is honest) |
+| `versus` | novelty | the prior work or line of work it is new relative to |
+| `origin` | novelty | `reused` (原样复用), `adapted` (借鉴后改), `new` (新造) |
+| `why` | novelty | why this counts as new, or why the borrowing is honest |
+
+`origin` replaces the old boolean `borrowed`; a map still using it verifies with a
+warning and renders the old way.
+
+**Strength** (map-only, never highlighted):
+
+| Field | Meaning |
+| --- | --- |
+| `text` | how much the evidence carries |
+| `inferred` | `true` when you drew the conclusion yourself — then `quote` must be absent |
+| `basis_quote` | required when `inferred` is true, and shown under the section |
+| `quote` | a sentence the authors use to hedge, when it exists |
 
 **Figures:**
 
@@ -68,13 +84,19 @@ what makes a second run skip instead of duplicating.
 | `supports` | which part of the argument it props up — in words, never an id |
 | `key_numbers` | the numbers it carries, copied from the table |
 | `caveat` | what it does **not** prove |
+| `highlight` | `false` keeps the figure in the map without a blue mark |
 
 ## Rules the checker enforces
 
 - Every highlighted field resolves in the PDF; a missing quote is an error, not a warning.
+- A quote that occurs more than once on a page is ambiguous; make it longer.
 - Every `*_inferred: true` carries a `basis_quote` that resolves anywhere in the paper.
-- Highlight count (claim + chain + choices + figures + limits) stays under the density
-  cap: 20 normal, 30 detailed.
+- Every annotation id is unique.
+- A comment stays under 240 characters; the checker asks you to rewrite it rather than
+  truncating, because the caveat sits last.
+- Highlight count (claim + chain + choices + highlighted figures + limits) stays under
+  the density cap: 20 normal, 30 detailed — counted against the annotations the PDF
+  already carries, so a second map on the same file cannot double the page load.
 
 ## Minimal example
 
@@ -82,22 +104,41 @@ what makes a second run skip instead of duplicating.
 {
   "paper": {"title": "NICE-SLAM", "zotero_key": "NICESLAM"},
   "claim": {
-    "text": "分层网格 + 冻结解码器才撑得住大场景",
+    "text": "多层网格替换单个 MLP，用于大场景重建",
     "quote": "we present NICE-SLAM, a dense SLAM system that incorporates multi-level local information",
     "page": 0,
-    "note": "整篇一句话：一个 MLP 撑不住，换成多层网格。"
+    "note": "把单个 MLP 换成多层网格，局部更新只改一层。"
   },
+  "pain": [
+    {
+      "who": "用平板扫整套房子的用户",
+      "symptom": "换房间后重建变糊，追踪也变差",
+      "cost": "得重扫",
+      "quote": "significant performance drops are observed in both the dense reconstruction and camera tracking",
+      "page": 3
+    }
+  ],
+  "novelty": [
+    {
+      "what": "分层特征网格",
+      "versus": "iMAP 的单个 MLP",
+      "origin": "new",
+      "why": "网格可以局部更新，MLP 只能整体更新",
+      "quote": "a hierarchical scene representation",
+      "page": 1
+    }
+  ],
   "choices": [
     {
       "id": "d1",
-      "choice": "粗层故意做糙（2m）",
+      "choice": "粗层用 2m 分辨率",
       "quote": "we use a very low resolution, with a side-length of 2m",
       "page": 2,
       "alternative": "只用一个高分辨率网格",
       "alternative_inferred": true,
       "basis_quote": "one feature grid with the same resolution as our fine-level representation",
-      "solves": "没观测到的地方也能外推",
-      "cost": "细节全靠中/细层"
+      "solves": "未观测区域可以先填上",
+      "cost": "细节要靠中、细层补"
     }
   ]
 }

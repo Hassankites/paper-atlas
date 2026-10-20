@@ -10,7 +10,25 @@ import pymupdf
 CAPTION_RE = re.compile(r"^(Figure|Fig\.|Table|图|表)\s*(\d+)\s*[:：.]", re.IGNORECASE)
 # Chinese journals commonly write 图1 标题 with no colon at all.
 CJK_CAPTION_RE = re.compile(r"^(图|表)\s*(\d+)\s+")
+# ...and prose commonly opens a sentence the same way: 图1 所示的结构……
+_CJK_PROSE = ("所示", "显示", "展示", "给出", "可以看", "如图", "见表", "见图", "中可")
 HEADING_RE = re.compile(r"^\d+(\.\d+)*\s+\S")
+# A caption is one paragraph; 300 characters cut off the long ones (Adam's
+# Figure 4 is 400+), which silently lost the figure.
+MAX_CAPTION = 800
+
+
+def _caption_match(text: str):
+    """The caption match for a block, or None when the block is prose."""
+    match = CAPTION_RE.match(text)
+    if match:
+        return match if len(text) <= MAX_CAPTION else None
+    match = CJK_CAPTION_RE.match(text)
+    if not match or len(text) > 80:
+        return None
+    if any(marker in text for marker in _CJK_PROSE):
+        return None
+    return match
 
 
 def _page_blocks(page) -> list[dict]:
@@ -73,8 +91,8 @@ def extract_structure(pdf_path: Path) -> dict:
     for page in pages:
         for block in page["blocks"]:
             text = block["text"]
-            match = CAPTION_RE.match(text) or CJK_CAPTION_RE.match(text)
-            if match and len(text) < 300:
+            match = _caption_match(text)
+            if match:
                 kind = match.group(1).lower()
                 is_figure = kind in ("figure", "fig.", "图")
                 label = f"{'Figure' if is_figure else 'Table'} {match.group(2)}"

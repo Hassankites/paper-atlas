@@ -31,7 +31,7 @@
     {
       "what": "把 KV cache 存成非连续的块，按块做注意力计算",
       "versus": "连续预分配的 KV cache",
-      "borrowed": false,
+      "origin": "new",
       "why": "块之间不必相邻，显存浪费不再随请求最大长度放大",
       "quote": "the attention key and values vectors are stored as non-contiguous blocks",
       "page": 4
@@ -39,15 +39,15 @@
     {
       "what": "逻辑块到物理块的块表映射",
       "versus": "操作系统的虚拟内存分页",
-      "borrowed": true,
-      "why": "直接借用分页思想，把块表换成了请求级的映射表",
+      "origin": "adapted",
+      "why": "借用分页思想并改写：块表是请求级的，操作系统的页表是进程级的",
       "quote": "virtual memory with paging",
       "page": 1
     },
     {
       "what": "迭代级调度，请求完成即换入新请求",
       "versus": "cellular batching 与 iteration-level scheduling",
-      "borrowed": true,
+      "origin": "reused",
       "why": "沿用已有调度思路，与分块 KV cache 配合使用",
       "quote": "fine-grained batching mechanisms",
       "page": 2

@@ -41,6 +41,7 @@ LABELS = {
         "cost": "代价",
         "supports": "支撑",
         "caveat": "没证明",
+        "inferred": "（推断）",
         "sep": " ｜ ",
     },
     "en": {
@@ -54,6 +55,7 @@ LABELS = {
         "cost": "costs",
         "supports": "supports",
         "caveat": "does not prove",
+        "inferred": " (inferred)",
         "sep": " | ",
     },
 }
@@ -79,13 +81,25 @@ def hex_to_rgb(value: str) -> tuple[float, float, float]:
     return tuple(int(value[index : index + 2], 16) / 255 for index in (0, 2, 4))
 
 
-def _clip(text: str, limit: int = 200) -> str:
-    text = " ".join((text or "").split())
-    return text if len(text) <= limit else text[: limit - 1] + "…"
+def _tidy(text: str) -> str:
+    """Collapse whitespace without cutting anything off.
+
+    A comment clipped at a fixed length can drop the one field that mattered —
+    the caveat sits last in the template. Length is a question for the checker
+    (`verify.MAX_COMMENT`), which can tell the author to rewrite; silently
+    truncating here hides the problem.
+    """
+    return " ".join((text or "").split())
 
 
 def _comment(role: str, entry: dict, labels: dict, lang: str) -> str:
     separator = labels["sep"]
+    marker = labels["inferred"]
+
+    def shown(name: str) -> str:
+        text = entry.get(name, "—")
+        return f"{text}{marker}" if entry.get(f"{name}_inferred") else text
+
     if role == "claim":
         body = entry.get("text", "")
         head = labels["claim"]
@@ -96,9 +110,9 @@ def _comment(role: str, entry: dict, labels: dict, lang: str) -> str:
     elif role == "choice":
         body = separator.join(
             [
-                f"{labels['alternative']}: {entry.get('alternative', '—')}",
-                f"{labels['solves']}: {entry.get('solves', '—')}",
-                f"{labels['cost']}: {entry.get('cost', '—')}",
+                f"{labels['alternative']}: {shown('alternative')}",
+                f"{labels['solves']}: {shown('solves')}",
+                f"{labels['cost']}: {shown('cost')}",
             ]
         )
         head = labels["choice"]
@@ -115,11 +129,15 @@ def _comment(role: str, entry: dict, labels: dict, lang: str) -> str:
         head = labels["limit"]
 
     # A note written by the agent wins over the template: it reads like a
-    # person talking to a labmate instead of a form with three fields.
+    # person talking to a labmate instead of a form with three fields. The
+    # inference marker survives the override, because the reader has to know
+    # which words are the paper's and which are ours.
     note = (entry.get("note") or "").strip()
     if note:
         body = note
-    return _clip(f"[{head}] {body}")
+        if any(entry.get(f"{name}_inferred") for name in ("alternative", "solves", "cost")):
+            body += marker
+    return _tidy(f"[{head}] {body}")
 
 
 def _figure_label(label: str, lang: str) -> str:
@@ -153,6 +171,10 @@ def plan(map_dict: dict, doc, lang: str = "zh") -> list[Planned]:
     for index, entry in enumerate(map_dict.get("choices") or [], 1):
         add("choice", entry.get("id") or f"d{index}", entry, entry.get("quote", ""))
     for index, entry in enumerate(map_dict.get("figures") or [], 1):
+        # The map can cover more figures than the reader's highlight budget
+        # allows; `highlight: false` keeps a figure in the map without a mark.
+        if entry.get("highlight") is False:
+            continue
         add(
             "figure",
             entry.get("label", f"fig{index}").lower().replace(" ", "-"),
@@ -164,7 +186,8 @@ def plan(map_dict: dict, doc, lang: str = "zh") -> list[Planned]:
     return planned
 
 
-def _our_keys(doc) -> set[str]:
+def our_keys(doc) -> set[str]:
+    """The `/Zotero:Key`s this tool already wrote into the PDF."""
     keys: set[str] = set()
     for page in doc:
         for annot in page.annots() or []:
@@ -172,6 +195,10 @@ def _our_keys(doc) -> set[str]:
             if kind == "string" and value.startswith(KEY_PREFIX):
                 keys.add(value)
     return keys
+
+
+# Kept for callers written before the name went public.
+_our_keys = our_keys
 
 
 def _remove_ours(doc) -> None:
@@ -192,7 +219,7 @@ def apply(
 
     if force:
         _remove_ours(doc)
-    existing = _our_keys(doc)
+    existing = our_keys(doc)
 
     added = 0
     skipped = 0
@@ -215,6 +242,7 @@ def apply(
         doc.xref_set_key(annot.xref, "Zotero:AuthorName", _pdf_string(AUTHOR))
         doc.xref_set_key(annot.xref, "Zotero:Key", _pdf_string(item.id))
         doc.xref_set_key(annot.xref, "NM", _pdf_string(f"Zotero-{item.id}"))
+        existing.add(item.id)
         added += 1
 
     doc.saveIncr()

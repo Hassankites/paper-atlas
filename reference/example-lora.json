@@ -31,7 +31,7 @@
     {
       "what": "把权重更新写成低秩分解 BA，训练时只学 A、B",
       "versus": "Adapter 与 Prefix Tuning",
-      "borrowed": false,
+      "origin": "new",
       "why": "不增加推理路径，部署时可合并回原权重",
       "quote": "we constrain its update by representing the latter with a low-rank decomposition",
       "page": 3
@@ -39,7 +39,7 @@
     {
       "what": "B 初始化为零，训练开始时增量为零",
       "versus": "对增量整体做随机初始化",
-      "borrowed": false,
+      "origin": "new",
       "why": "训练起点与原模型等价，避免初始阶段的扰动",
       "quote": "We use a random Gaussian initialization for A and zero for B",
       "page": 3
@@ -47,7 +47,7 @@
     {
       "what": "Adapter 层与 Prefix Tuning 作为对照",
       "versus": "Houlsby adapter、prefix tuning",
-      "borrowed": true,
+      "origin": "reused",
       "why": "沿用已有方法，只作为基线",
       "quote": "adding adapter layers",
       "page": 2
@@ -130,10 +130,10 @@
       "alternative": "把 α 当作独立超参与学习率一起调",
       "alternative_inferred": true,
       "basis_quote": "tuning α is roughly the same as tuning the learning rate",
-      "solves": "改变秩时不必重新调参",
+      "solves": "改变秩时降低重新调参的需求",
       "cost": "α 与学习率耦合，更换优化器后仍需重新确定",
       "cost_inferred": true,
-      "note": "增量按 α/r 缩放，改变秩时不必重调超参。"
+      "note": "增量按 α/r 缩放，论文称这降低了改变秩时重新调参的需求。"
     },
     {
       "id": "d4",

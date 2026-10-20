@@ -27,7 +27,10 @@ def main(argv: list[str] | None = None) -> int:
     map_dict = json.loads(Path(args.map).read_text(encoding="utf-8"))
     doc = pymupdf.open(args.pdf)
 
-    report = verify.verify(map_dict, doc, density=args.density)
+    for correction in verify.fill_pages(map_dict, doc):
+        print(f"page fix   : {correction}")
+
+    report = verify.verify(map_dict, doc, density=args.density, lang=args.lang)
     if not report.ok:
         for error in report.errors:
             print(f"error      : {error}")

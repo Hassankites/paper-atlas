@@ -79,21 +79,39 @@ def connect_ro(data_dir: Path) -> LibraryConnection:
     return conn
 
 
+def _like(term: str) -> str:
+    """Escape the wildcards a paper title may contain (%, _, \\)."""
+    escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return f"%{escaped}%"
+
+
 def find_item(
     conn: sqlite3.Connection, query: str, limit: int = 5
 ) -> list[PaperHit]:
+    # Attachments carry the filename as their title, and a deleted item still
+    # sits in `items` until the trash is emptied; neither is a paper to map.
+    has_trash = conn.execute(
+        "select 1 from sqlite_master where type = 'table' and name = 'deletedItems'"
+    ).fetchone()
+    trash = (
+        "and i.itemID not in (select itemID from deletedItems)"
+        if has_trash
+        else ""
+    )
     rows = conn.execute(
-        """
+        f"""
         select i.itemID as item_id, i.key as key, v.value as title
         from items i
         join itemData d on d.itemID = i.itemID
         join fields f on f.fieldID = d.fieldID and f.fieldName = 'title'
         join itemDataValues v on v.valueID = d.valueID
-        where lower(v.value) like '%' || lower(?) || '%'
+        where lower(v.value) like lower(?) escape '\\'
+          and i.itemID not in (select itemID from itemAttachments)
+          {trash}
         order by i.itemID desc
         limit ?
         """,
-        (query, limit),
+        (_like(query), limit),
     ).fetchall()
 
     data_dir = getattr(conn, "data_dir", None)

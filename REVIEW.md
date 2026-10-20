@@ -10,7 +10,7 @@
 
 ```bash
 python -m pip install -r requirements.txt
-python -m pytest -q                 # 80 个测试，约 1.2 秒
+python -m pytest -q                 # 114 个测试，约 3 秒
 python scripts/doctor.py            # 环境自检
 ```
 
@@ -40,18 +40,35 @@ python scripts/doctor.py            # 环境自检
 
 ## 文字风格
 
-批注和地图正文按 `lieflat-less-ai-tone` 的规则清理过一遍（禁比喻、禁短句下判断、禁冒号揭晓、
-禁翻案腔）。`SKILL.md` 的 Voice 一节是这套规则的精简版，供没装该 skill 的用户使用。如果你觉得
-仍有 AI 味，直接指到具体句子即可；`reference/example-nice-slam.md` 里有二十条批注原文可对照。
+批注和地图正文的规则写在 `SKILL.md` 的 Voice 一节，是**本 skill 自己的规则**：禁比喻、禁短句下判断、
+禁冒号揭晓、禁翻案腔。`lieflat-less-ai-tone`（如果装了）是一份更窄的清单，只处理 AI 腔的典型特征，
+并且明确保护比喻与长短句节奏——它不能替代 Voice 一节，只能补充。如果你觉得仍有 AI 味，直接指到具体
+句子即可；`reference/example-nice-slam.md` 里有二十条批注原文可对照。
 
 ## 特别想被挑的地方
 
 1. **锚定精度**：`anchors.py` 的降级阶梯（去连字符 → 归一化 → 取最紧凑一处）在真实两栏论文上够不够稳；多命中判定的阈值合不合理。
 2. **评论的"人味"**：`SKILL.md` 的 Voice 一节是否真的能约束出像人写的批注，还是仍会滑回报告腔。
-3. **痛点 / 创新点两节是否够锋利**：`reference/example-nice-slam.md` 里那两张表，是不是比一份普通总结多说了一层东西；"借来的 / 新造的"这一列会不会被 agent 敷衍掉。
-4. **中英双语**：英文路径是否只是中文规则的翻译，`--lang en` 的产出读起来是否自然。
+3. **痛点 / 创新点两节是否够锋利**：`reference/example-nice-slam.md` 里那两张表，是不是比一份普通总结多说了一层东西；创新点的「原样复用 / 借鉴后改 / 新造」这一列会不会被 agent 敷衍成整列"新造"。
+4. **中英双语**：英文路径是否只是中文规则的翻译。注意 `--lang` 只切换标题与批注模板，不翻译正文——英文请求要求 agent 直接把正文写成英文。
 5. **幂等与副作用**：重复 `--apply`、`--force`、备份、以及"先征得同意"这条规则在实际 agent 手里守不守得住。
 6. **与无 skill 的差距**：`docs/pressure-test.md` 里那个基线其实很强——如果你认为差距不够大，直接说该砍掉哪一节、该加哪一节。
+
+## 2026-10-19 审查之后的改动
+
+Codex 的审查报告（`work/audit-20261019/`）指出"引用正确、推断身份、高亮范围"都还没有保证。已改：
+
+- **负号消失**：`_match_key` 以前删掉所有连字符，`by -1 points` 会被 `by 1 points` 认证通过。现在只还原行末断词，数字里的连字符保留；`pre-trained` 仍能匹配 `pretrained`。
+- **单行矩形**：一个公式或上标不再把高光拉到下一行；行末断词的两半各用一个矩形，不再框住相邻栏。
+- **推断身份**：`strength` 的 `inferred` 与 `quote` 互斥，判错；`annotate` 把 `（推断）` 写进批注（写了 `note` 也保留）。
+- **逐条校验**：pain / novelty 的 `quote`、concepts 的 `basis_quote`、figures 的 `evidence_quote` 都要在 PDF 里找得到。
+- **数字**：地图里出现的每个数字都必须在 PDF 里出现，`999999 percent` 这类直接拒。
+- **id 唯一、跨页依据、密度**：重复 id 报错；`basis_page` 自动回填真实页码；同一 PDF 的二次标注把已有批注计入 20 条上限。
+- **过长批注**：不再静默截断（截断会切掉最后的 caveat），改为报错要求改写。
+- **大小写与词边界**：`WE PROPOSE` 与 `We propose` 算两次出现，歧义引文会被拒；`method` 不再命中 `methodology` 里的子串。
+- **英文回声检查**：批注与引文过近时 Zotero 会清空批注，现在两种语言的模板都会检查。
+- **样例**：NICE-SLAM 的"解码器全部冻结"改成"几何解码器冻结、颜色解码器从头训练"；LoRA 的"不必重调"改成"降低重新调参的需求"；创新点改用 `origin` 三值。
+- 复跑审查脚本的结果在 `work/audit-20261019/code-review/results-rerun.json`：每一条探针现在都按预期失败或拒绝。
 
 ## 已知未验证
 
