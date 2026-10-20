@@ -18,6 +18,17 @@ def test_find_item_matches_title_case_insensitively(library):
     assert hits[0].title.startswith("NICE-SLAM")
 
 
+def test_find_item_skips_deleted_items_and_attachments(library):
+    conn = zotero.connect_ro(library.data_dir)
+    hits = zotero.find_item(conn, "NICE-SLAM")
+    assert [hit.item_id for hit in hits] == [1]
+
+
+def test_find_item_treats_percent_as_text(library):
+    conn = zotero.connect_ro(library.data_dir)
+    assert zotero.find_item(conn, "%") == []
+
+
 def test_resolve_pdf_returns_existing_path(library):
     conn = zotero.connect_ro(library.data_dir)
     hit = zotero.find_item(conn, "NICE-SLAM")[0]

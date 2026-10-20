@@ -14,6 +14,7 @@ create table itemData (itemID int, fieldID int, valueID int);
 create table itemDataValues (valueID integer primary key, value text);
 create table fields (fieldID int, fieldName text);
 create table itemAttachments (itemID int, parentItemID int, path text, contentType text);
+create table deletedItems (itemID integer primary key);
 """
 
 TITLE = "NICE-SLAM: Neural Implicit Scalable Encoding for SLAM"
@@ -49,6 +50,18 @@ def build(root: Path) -> Fixture:
     con.execute("insert into itemData values (1, 1, 1)")
     con.execute(
         "insert into itemAttachments values (2, 1, 'storage:paper.pdf', 'application/pdf')"
+    )
+    # A deleted paper and a standalone attachment, both matching the query:
+    # neither should come back from a search.
+    con.execute("insert into items values (3, 1, 1, 'DELETED1')")
+    con.execute("insert into itemDataValues values (2, ?)", ("NICE-SLAM (old copy)",))
+    con.execute("insert into itemData values (3, 1, 2)")
+    con.execute("insert into deletedItems values (3)")
+    con.execute("insert into items values (4, 1, 1, 'ATTACH02')")
+    con.execute("insert into itemDataValues values (3, ?)", ("NICE-SLAM.pdf",))
+    con.execute("insert into itemData values (4, 1, 3)")
+    con.execute(
+        "insert into itemAttachments values (4, null, 'storage:scan.pdf', 'application/pdf')"
     )
     con.commit()
     con.close()
