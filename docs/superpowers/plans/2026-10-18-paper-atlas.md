@@ -19,7 +19,7 @@
 - Never guess coordinates. A quote that cannot be located is skipped and reported.
 - Always write `<name>.paper-atlas.bak.pdf` before modifying a PDF.
 - Re-running `annotate.py` on the same map adds zero new annotations.
-- `find_paper.py` and `doctor.py` must work on Windows, macOS and Linux, under non-ASCII paths (this machine: `C:\Users\喜欢红糖馒头的内涵\`).
+- `find_paper.py` and `doctor.py` must work on Windows, macOS and Linux, under non-ASCII paths (this machine: a non-ASCII profile path).
 - User-facing copy ships in English and 简体中文 (`README.md`, `README.zh-CN.md`, bilingual map headings).
 - Annotation comments must never equal the highlighted text (Zotero clears those).
 

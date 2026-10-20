@@ -31,7 +31,7 @@ class Fixture:
 
 def build(root: Path) -> Fixture:
     # A non-ASCII parent directory on purpose: the real data dir is under one.
-    data_dir = root / "喜欢红糖馒头" / "Zotero"
+    data_dir = root / "测试用户" / "Zotero"
     storage = data_dir / "storage" / "ATTACH01"
     storage.mkdir(parents=True)
     pdf = storage / "paper.pdf"

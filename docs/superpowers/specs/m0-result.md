@@ -2,7 +2,7 @@
 
 Date: 2026-10-18
 Environment: Zotero 10.0.2 (BuildID 20260826142222), Windows 11, data dir under a
-non-ASCII path (`C:\Users\喜欢红糖馒头的内涵\Zotero`), Python 3.12.10, PyMuPDF 1.28.2.
+non-ASCII path (a Windows profile path with Chinese characters), Python 3.12.10, PyMuPDF 1.28.2.
 
 ## Question
 

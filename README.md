@@ -12,10 +12,10 @@ sentence in the paper, and every inference says which sentence it came from.
 ## Install
 
 ```bash
-git clone <this repo> ~/.claude/skills/paper-atlas     # Claude Code
-# or: ~/.dsh/skills/paper-atlas                       # DeepSeek Harness
-# or: ~/.agents/skills/paper-atlas                    # shared location
-cd ~/.claude/skills/paper-atlas
+git clone https://github.com/Hassankites/paper-atlas.git ~/.dsh/skills/paper-atlas
+# Claude Code: ~/.claude/skills/paper-atlas
+# shared: ~/.agents/skills/paper-atlas
+cd ~/.dsh/skills/paper-atlas
 python -m pip install -r requirements.txt
 python scripts/doctor.py
 ```

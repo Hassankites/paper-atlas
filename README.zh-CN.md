@@ -7,10 +7,10 @@
 ## 安装
 
 ```bash
-git clone <仓库地址> ~/.claude/skills/paper-atlas     # Claude Code
-# 或：~/.dsh/skills/paper-atlas                       # DeepSeek Harness
-# 或：~/.agents/skills/paper-atlas                    # 通用位置
-cd ~/.claude/skills/paper-atlas
+git clone https://github.com/Hassankites/paper-atlas.git ~/.dsh/skills/paper-atlas
+# Claude Code 用 ~/.claude/skills/paper-atlas
+# 通用位置用 ~/.agents/skills/paper-atlas
+cd ~/.dsh/skills/paper-atlas
 python -m pip install -r requirements.txt
 python scripts/doctor.py
 ```
