@@ -10,7 +10,7 @@
 
 ```bash
 python -m pip install -r requirements.txt
-python -m pytest -q                 # 113 个测试，约 3 秒
+python -m pytest -q                 # 114 个测试，约 3 秒
 python scripts/doctor.py            # 环境自检
 ```
 

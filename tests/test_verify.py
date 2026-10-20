@@ -1,7 +1,7 @@
 import pymupdf
 import pytest
 
-from paper_atlas import verify
+from paper_atlas import render, verify
 from tests.fixtures.build_paper_fixture import build
 
 TITLE = "Neural Implicit Scalable Encoding"
@@ -57,6 +57,39 @@ def test_valid_map_has_no_errors(valid_map, doc):
     report = verify.verify(valid_map, doc)
     assert report.errors == []
     assert report.highlight_count == 4
+
+
+def test_verify_fills_the_page_the_basis_is_on(tmp_path):
+    doc = pymupdf.open()
+    first = doc.new_page()
+    first.insert_text((72, 72), "The method is local.", fontsize=11)
+    doc.new_page().insert_text((72, 72), "Filler page with no quote.", fontsize=11)
+    doc.new_page().insert_text((72, 72), "Local BA keeps the tracking stable.", fontsize=11)
+    path = tmp_path / "three.pdf"
+    doc.save(path)
+    doc.close()
+    doc = pymupdf.open(path)
+
+    map_dict = {
+        "claim": {"text": "local", "quote": "The method is local.", "page": 0},
+        "choices": [
+            {
+                "id": "d1",
+                "choice": "local BA",
+                "quote": "The method is local.",
+                "page": 0,
+                "alternative": "global BA",
+                "cost": "slower",
+                "basis_quote": "Local BA keeps the tracking stable.",
+                "basis_inferred": True,
+                "alternative_inferred": True,
+                "cost_inferred": True,
+            }
+        ],
+    }
+    verify.verify(map_dict, doc)
+    assert map_dict["choices"][0]["basis_page"] == 2
+    assert "p.3" in render.render(map_dict)
 
 
 def test_an_invented_number_is_an_error(valid_map, doc):
