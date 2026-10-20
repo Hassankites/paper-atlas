@@ -15,9 +15,9 @@ p.2 · “PagedAttention, an attention algorithm inspired by the operating syste
 
 | 创新 | 相对什么 | 来源 | 凭什么算新 | 出处 |
 | --- | --- | --- | --- | --- |
-| 把 KV cache 存成非连续的块，按块做注意力计算 | 连续预分配的 KV cache | 新造的 | 块之间不必相邻，显存浪费不再随请求最大长度放大 | p.5 |
-| 逻辑块到物理块的块表映射 | 操作系统的虚拟内存分页 | 借来的 | 直接借用分页思想，把块表换成了请求级的映射表 | p.2 |
-| 迭代级调度，请求完成即换入新请求 | cellular batching 与 iteration-level scheduling | 借来的 | 沿用已有调度思路，与分块 KV cache 配合使用 | p.3 |
+| 把 KV cache 存成非连续的块，按块做注意力计算 | 连续预分配的 KV cache | 新造 | 块之间不必相邻，显存浪费不再随请求最大长度放大 | p.5 |
+| 逻辑块到物理块的块表映射 | 操作系统的虚拟内存分页 | 借鉴后改 | 借用分页思想并改写：块表是请求级的，操作系统的页表是进程级的 | p.2 |
+| 迭代级调度，请求完成即换入新请求 | cellular batching 与 iteration-level scheduling | 原样复用 | 沿用已有调度思路，与分块 KV cache 配合使用 | p.3 |
 
 ## 因果链
 

@@ -80,3 +80,35 @@ def test_detects_chinese_caption_labels(tmp_path):
     labels = [figure["label"] for figure in structure["figures"]]
     assert "Figure 1" in labels
     assert "Table 2" in labels
+
+
+def test_a_long_caption_is_still_a_caption(tmp_path):
+    # Adam's Figure 4 caption runs past 300 characters; dropping it lost a
+    # whole figure from the evidence map.
+    pdf = tmp_path / "long.pdf"
+    doc = pymupdf.open()
+    page = doc.new_page(width=595, height=842)
+    caption = "Figure 4: Learning curves. " + "We report the loss for each step " * 12
+    for line in caption.split(". "):
+        page.insert_text((72, 100), line, fontsize=9)
+    doc.save(pdf)
+    doc.close()
+
+    labels = [figure["label"] for figure in extract.extract_structure(pdf)["figures"]]
+    assert "Figure 4" in labels
+
+
+def test_a_sentence_about_a_figure_is_not_a_caption(tmp_path):
+    # 表1 所示的结果 opens a sentence the same way a caption does.
+    pdf = tmp_path / "prose.pdf"
+    doc = pymupdf.open()
+    page = doc.new_page(width=595, height=842)
+    page.insert_text(
+        (72, 100), "表1 所示的结果表明我们的方法更好。", fontsize=9, fontname="china-s"
+    )
+    page.insert_text((72, 200), "表 3 消融实验。", fontsize=9, fontname="china-s")
+    doc.save(pdf)
+    doc.close()
+
+    labels = [figure["label"] for figure in extract.extract_structure(pdf)["figures"]]
+    assert labels == ["Table 3"]

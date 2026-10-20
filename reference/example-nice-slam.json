@@ -6,10 +6,10 @@
     "pdf": "work/nice-slam.pdf"
   },
   "claim": {
-    "text": "用多层特征网格配合冻结的预训练解码器替换单个 MLP，以同时满足细节、实时和未观测区域的补全。",
+    "text": "用多层特征网格配合冻结的预训练几何解码器替换单个 MLP，以同时满足细节、实时和未观测区域的补全。",
     "quote": "we present NICE-SLAM, a dense SLAM system that incorporates multi-level local information by introducing a hierarchical scene representation",
     "page": 0,
-    "note": "论文的主张是用多层网格加冻结解码器替换单个 MLP，以此支持大场景的重建与追踪。"
+    "note": "主张是多层网格加冻结的几何解码器替换单个 MLP，用来支持大场景的重建与追踪。"
   },
   "chain": [
     {
@@ -68,7 +68,7 @@
     },
     {
       "id": "d2",
-      "choice": "解码器全部冻结，只优化网格里的特征",
+      "choice": "几何解码器冻结，只优化网格里的特征",
       "quote": "we fix the pre-trained decoders",
       "page": 2,
       "alternative": "像 iMAP 那样端到端同时训练网络权重与场景表示",
@@ -76,7 +76,7 @@
       "basis_quote": "only optimize the feature grids",
       "solves": "更新只作用于特征，不牵动全局权重，优化更稳定，收敛更快",
       "cost": "表达上限受预训练先验约束；预训练数据与目标场景差异较大时，细节难以恢复",
-      "note": "解码器保持冻结，只优化网格特征。优化更稳定，上限由预训练先验决定。"
+      "note": "几何解码器冻结，只优化网格特征；颜色解码器仍从数据学。上限由预训练先验决定。"
     },
     {
       "id": "d3",
@@ -281,7 +281,7 @@
     {
       "what": "分层特征网格，并且只更新视锥内的特征",
       "versus": "iMAP 的单个 MLP 全局更新",
-      "borrowed": false,
+      "origin": "new",
       "why": "使隐式 SLAM 的表示可以局部更新，这是扩展到大规模场景的前提",
       "quote": "a hierarchical scene representation",
       "page": 0
@@ -289,7 +289,7 @@
     {
       "what": "粗层网格用于预测未观测区域，为追踪提供几何",
       "versus": "iMAP 不具备外推能力",
-      "borrowed": false,
+      "origin": "new",
       "why": "把未观测区域的预测与已观测细节交由容量不同的模块分别承担",
       "quote": "predict approximate occupancy values outside of the observed geometry",
       "page": 2
@@ -297,8 +297,8 @@
     {
       "what": "ConvONet 解码器、NeRF 体渲染与方差归一化深度损失",
       "versus": "ConvONet、NeRF、iMAP",
-      "borrowed": true,
-      "why": "直接沿用，仅把解码器由训练改为冻结、只训练特征",
+      "origin": "reused",
+      "why": "直接沿用；几何解码器由训练改为冻结，颜色解码器从头训练",
       "quote": "pre-trained as part of ConvONet",
       "page": 2
     }

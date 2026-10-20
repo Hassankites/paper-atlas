@@ -101,7 +101,7 @@ def test_render_separates_pain_and_novelty(map_dict):
         {
             "what": "分层网格支持局部更新",
             "versus": "iMAP 的单个 MLP",
-            "borrowed": False,
+            "origin": "new",
             "why": "第一次让隐式 SLAM 具备局部可更新性",
             "quote": "hierarchical scene representation",
             "page": 0,
@@ -109,7 +109,7 @@ def test_render_separates_pain_and_novelty(map_dict):
         {
             "what": "ConvONet 预训练解码器",
             "versus": "ConvONet",
-            "borrowed": True,
+            "origin": "reused",
             "why": "直接借用，未改",
             "quote": "pre-trained as part of ConvONet",
             "page": 2,
@@ -118,7 +118,7 @@ def test_render_separates_pain_and_novelty(map_dict):
     text = render.render(map_dict, lang="zh")
     assert "## 痛点" in text
     assert "## 创新点" in text
-    assert "借来的" in text
+    assert "原样复用" in text and "新造" in text
     assert "多房间扫描" in text and "分层网格支持局部更新" in text
     assert "代价是 得重扫" not in text and "代价是得重扫" in text
 
@@ -126,12 +126,39 @@ def test_render_separates_pain_and_novelty(map_dict):
 def test_render_english_pain_and_novelty_headings(map_dict):
     map_dict["pain"] = [{"who": "multi-room", "symptom": "blurry", "cost": "rescan", "page": 0}]
     map_dict["novelty"] = [
-        {"what": "hierarchical grid", "versus": "single MLP", "borrowed": False, "page": 0},
-        {"what": "ConvONet decoder", "versus": "ConvONet", "borrowed": True, "page": 2},
+        {"what": "hierarchical grid", "versus": "single MLP", "origin": "new", "page": 0},
+        {"what": "ConvONet decoder", "versus": "ConvONet", "origin": "adapted", "page": 2},
     ]
     text = render.render(map_dict, lang="en")
     assert "## Why it hurts" in text and "## What is new" in text
-    assert "Borrowed" in text
+    assert "Adapted" in text
+
+
+def test_a_figure_without_a_highlight_is_marked_in_the_table(map_dict):
+    map_dict["figures"][0]["highlight"] = False
+    text = render.render(map_dict, lang="zh")
+    assert "Table 5（没高亮）" in text
+
+
+def test_render_accepts_the_old_borrowed_flag(map_dict):
+    map_dict["novelty"] = [
+        {"what": "ConvONet decoder", "versus": "ConvONet", "borrowed": True, "page": 2},
+    ]
+    assert "原样复用" in render.render(map_dict, lang="zh")
+
+
+def test_render_marks_an_inferred_cost_of_the_pain(map_dict):
+    map_dict["pain"] = [
+        {
+            "who": "多房间扫描",
+            "symptom": "重建变糊",
+            "cost": "得重扫一遍",
+            "cost_inferred": True,
+            "quote": "significant performance drops",
+            "page": 0,
+        }
+    ]
+    assert "代价是得重扫一遍（推断）" in render.render(map_dict, lang="zh")
 
 
 def test_render_shows_the_basis_of_an_inference(map_dict):

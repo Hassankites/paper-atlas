@@ -74,11 +74,34 @@ def test_note_overrides_the_template(valid_map, doc):
     assert choice.comment.startswith("[选择]")
 
 
-def test_note_is_clipped_to_200_characters(valid_map, doc):
+def test_a_long_note_is_never_silently_cut(valid_map, doc):
+    # Truncating at a fixed length used to delete the caveat that sat last.
     valid_map["claim"]["note"] = "很长" * 300
     claim = next(item for item in annotate.plan(valid_map, doc) if item.role == "claim")
-    assert claim.comment.count("很长") > 50
-    assert len(claim.comment) <= 200
+    assert claim.comment.count("很长") == 300
+
+
+def test_a_figure_can_stay_in_the_map_without_a_highlight(valid_map, doc):
+    valid_map["figures"][0]["highlight"] = False
+    roles = [item.role for item in annotate.plan(valid_map, doc)]
+    assert "figure" not in roles
+
+
+def test_an_inferred_field_is_marked_in_the_comment(valid_map, doc):
+    valid_map["choices"][0]["cost_inferred"] = True
+    choice = next(
+        item for item in annotate.plan(valid_map, doc) if item.role == "choice"
+    )
+    assert "more parameters（推断）" in choice.comment
+
+
+def test_the_inference_marker_survives_a_note(valid_map, doc):
+    valid_map["choices"][0]["cost_inferred"] = True
+    valid_map["choices"][0]["note"] = "三层网格换局部更新，参数变多。"
+    choice = next(
+        item for item in annotate.plan(valid_map, doc) if item.role == "choice"
+    )
+    assert choice.comment == "[选择] 三层网格换局部更新，参数变多。（推断）"
 
 
 def test_comments_do_not_leak_internal_ids(valid_map, doc):

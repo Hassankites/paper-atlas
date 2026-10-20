@@ -19,14 +19,17 @@ back to a sentence in the paper, and every inference says which sentence it came
    drop it and say so; never guess a location.
 3. **Inference is allowed, hiding it is not.** `alternative`, `cost`, and `strength`
    are usually not written down by the authors. Mark them `*_inferred: true`, attach a
-   `basis_quote`, and never highlight them.
+   `basis_quote`, and never highlight them. A `strength` entry marked `inferred` must
+   **not** carry a `quote` — the verifier rejects it, because a fabricated quote next to
+   an honest basis reads as the paper's own words.
 4. **Ask before writing annotations.** Run the dry run, show the count, the colours and
    the exact file that would change, then wait for an explicit yes. No yes, no `--apply`.
    Many readers do not want their library touched; the map alone is a complete answer.
    If you cannot reach a human (you are a subagent), stop and hand the consent question
    back to your caller verbatim — do not decide for them.
-5. **20 highlights by default**, 30 with `--density detailed`. A page of highlighter is
-   worse than none.
+5. **20 highlights by default**, 30 with `--density detailed` — per PDF, not per map. A
+   second map on the same file adds to the ones already written, and the verifier counts
+   them. A page of highlighter is worse than none.
 6. **Never write `zotero.sqlite`.** `find_paper.py` reads a snapshot; the live database
    is off-limits.
 7. **Never invent numbers.** Every number in the map comes from the text or a table.
@@ -72,7 +75,8 @@ Annotations are read while someone is mid-paper, so they must sound like a colle
 stating a fact, not a report generator and not a copywriter.
 
 - One idea per note. ~40 characters in Chinese, or ~15 words in English. Short
-  sentences. Concrete nouns.
+  sentences. Concrete nouns. The template's three-field comment (alternative / solves /
+  cost) is the exception: it is a form, not prose, and it may run longer.
 - State the fact and the consequence: 「粗层使用 2m 分辨率，用于预测未观测区域」. Not
   「粗层故意做糙，专门管没看见的地方」 — that is a slogan.
 - **No metaphors.** Systems do not 撑不住, 崩, 生病, have 天花板, or 装进 anything. Say what
@@ -90,8 +94,10 @@ stating a fact, not a report generator and not a copywriter.
   regions", not "the coarse level is deliberately blurry, and that is what makes unseen
   rooms tractable".
 - If the `lieflat-less-ai-tone` skill is installed, run every `note` and the map prose
-  through its checklist before writing. Its whitelist names the same triggers this
-  section is aiming at.
+  through its checklist before writing. It is a narrower list than this section — it
+  removes AI tells such as idealized occupational personification, and it explicitly
+  protects metaphor and long-short rhythm — so it complements these rules rather than
+  replacing them. The bans above come from this skill, not from it.
 
 ## The map
 
@@ -103,13 +109,23 @@ Two of them carry the weight, because a good summary already does the rest:
 - **痛点 / Why it hurts** — name who feels it, what the symptom is, and what it costs them
   (a rescan, a manual cleanup, a room-sized limit). "Prior methods are not scalable" is not
   a pain; "you can only scan one room, so a flat means starting over" is.
-- **创新点 / What is new** — one row per claimed contribution, compared against a *named*
-  prior work, with an honest **borrowed vs built** column. Most papers borrow most of their
-  stack (a decoder, a renderer, a loss); saying which parts are new is the point. If every
-  row is "built", you probably have not read the related work closely enough.
+- **创新点 / What is new** — one row per claimed contribution, compared against a prior
+  work, with an honest **origin** column: 原样复用 (reused unchanged) / 借鉴后改 (adapted) /
+  新造 (built here). Most papers borrow most of their stack (a decoder, a renderer, a loss);
+  saying which parts are new is the point. If every row is 新造, you probably have not read
+  the related work closely enough. Name the specific prior work when the paper does; when
+  the comparison is a whole line of work rather than one citation, describe that line
+  instead of inventing a paper to point at.
 
 The decision table's **"could have been"** column is the other thing a summary never has —
 without it a decision is just a description.
+
+The map is the coverage unit; the highlight budget is a separate limit. If a paper has
+more figures than the budget allows, keep every figure in the map and set
+`"highlight": false` on the ones the argument does not rest on — the table marks them
+「没高亮」 and nothing is written into the PDF for them. The blue highlight covers the
+caption; when your comment quotes a number from the table or the axes, put that sentence
+in `evidence_quote` so the number's origin is verifiable too.
 
 ## Quality bar
 
@@ -135,7 +151,9 @@ without it a decision is just a description.
 ## Language
 
 Follow the user: Chinese request → Chinese map and notes, English terms kept in
-parentheses; English request → English throughout. `--lang en` forces English.
+parentheses; English request → English throughout. `--lang` switches the map's headings
+and the annotation templates — it cannot translate prose you have already written, so an
+English request means writing the body in English, not passing a flag.
 
 ## What this is not
 

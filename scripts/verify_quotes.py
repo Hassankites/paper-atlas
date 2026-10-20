@@ -19,11 +19,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("map", help="path to map.json")
     parser.add_argument("--pdf", required=True, help="the paper's PDF")
     parser.add_argument("--density", choices=sorted(verify.CAPS), default="normal")
+    parser.add_argument("--lang", choices=["zh", "en"], default="zh")
     args = parser.parse_args(argv)
 
     map_dict = json.loads(Path(args.map).read_text(encoding="utf-8"))
     doc = pymupdf.open(args.pdf)
-    report = verify.verify(map_dict, doc, density=args.density)
+    for correction in verify.fill_pages(map_dict, doc):
+        print(f"page fix   : {correction}")
+    report = verify.verify(map_dict, doc, density=args.density, lang=args.lang)
 
     print(f"highlights : {report.highlight_count} (cap {verify.CAPS[args.density]})")
     for warning in report.warnings:
